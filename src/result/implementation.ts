@@ -1,10 +1,8 @@
 import { None, type Option, Some } from "../option/mod.ts";
-import { Result, ResultType } from "./api.ts";
-import { ChainableResult, UnwrapableResult } from "./chainable.ts";
+import { Result, ResultType, UnwrapableResult } from "./api.ts";
 import { Ok, PromisedResult, ResultValue } from "./result.ts";
 
-export class OkValue<T, E>
-  implements ChainableResult<T, E>, UnwrapableResult<T, E> {
+export class OkValue<T, E> implements UnwrapableResult<T, E> {
   constructor(private okValue: T) {}
 
   [Symbol.iterator](): IterableIterator<T> {
@@ -15,17 +13,17 @@ export class OkValue<T, E>
     return ResultType.Ok;
   }
 
-  and<U, E>(res: Result<U, E>): Result<U, E> {
+  and<U>(res: Result<U, E>): Result<U, E> {
     return res;
   }
 
-  andThen<U, E>(op: (some: T) => Promise<Result<U, E>>): PromisedResult<U, E>;
-  andThen<U, E>(op: (some: T) => Result<U, E>): Result<U, E>;
-  andThen<U, E>(
+  andThen<U>(op: (some: T) => Promise<Result<U, E>>): PromisedResult<U, E>;
+  andThen<U>(op: (some: T) => Result<U, E>): Result<U, E>;
+  andThen<U>(
     op: (some: T) => Result<U, E> | Promise<Result<U, E>>,
   ): PromisedResult<U, E> | Result<U, E> {
     const alt = op(this.okValue);
-    return alt instanceof Promise ? PromisedResult.create(alt) : alt;
+    return alt instanceof Promise ? PromisedResult.from(alt) : alt;
   }
 
   err(): Option<E> {
@@ -51,7 +49,7 @@ export class OkValue<T, E>
     const newVal = fn(this.okValue);
 
     return newVal instanceof Promise
-      ? PromisedResult.create(newVal.then(Ok<U, E>))
+      ? PromisedResult.from(newVal.then(Ok<U, E>))
       : Ok(newVal);
   }
 
@@ -83,7 +81,7 @@ export class OkValue<T, E>
   }
 
   or(_: Result<T, E>): Result<T, E> {
-    return ResultValue.from(this);
+    return ResultValue.from<T, E>(this);
   }
 
   orElse(fn: (err: E) => Promise<Result<T, E>>): PromisedResult<T, E>;
@@ -91,7 +89,7 @@ export class OkValue<T, E>
   orElse(
     _: (err: E) => Result<T, E> | Promise<Result<T, E>>,
   ): PromisedResult<T, E> | Result<T, E> {
-    return ResultValue.from(this);
+    return ResultValue.from<T, E>(this);
   }
 
   unwrap(): T {
@@ -109,21 +107,20 @@ export class OkValue<T, E>
   }
 }
 
-export class ErrValue<T, E>
-  implements ChainableResult<T, E>, UnwrapableResult<T, E> {
+export class ErrValue<T, E> implements UnwrapableResult<T, E> {
   constructor(private errValue: E) {}
 
   [Symbol.iterator](): IterableIterator<T> {
     return [][Symbol.iterator]();
   }
 
-  and<U, E>(_: Result<U, E>): Result<U, E> {
+  and<U>(_: Result<U, E>): Result<U, E> {
     return ResultValue.from(this as unknown as ErrValue<U, E>);
   }
 
-  andThen<U, E>(fn: (some: T) => Promise<Result<U, E>>): PromisedResult<U, E>;
-  andThen<U, E>(fn: (some: T) => Result<U, E>): Result<U, E>;
-  andThen<U, E>(
+  andThen<U>(fn: (some: T) => Promise<Result<U, E>>): PromisedResult<U, E>;
+  andThen<U>(fn: (some: T) => Result<U, E>): Result<U, E>;
+  andThen<U>(
     _: (some: T) => Result<U, E> | Promise<Result<U, E>>,
   ): PromisedResult<U, E> | Result<U, E> {
     return ResultValue.from(this as unknown as ErrValue<U, E>);
@@ -185,7 +182,7 @@ export class ErrValue<T, E>
     fn: (err: E) => Result<T, E> | Promise<Result<T, E>>,
   ): PromisedResult<T, E> | Result<T, E> {
     const alt = fn(this.errValue);
-    return alt instanceof Promise ? PromisedResult.create(alt) : alt;
+    return alt instanceof Promise ? PromisedResult.from(alt) : alt;
   }
 
   unwrap(): T {

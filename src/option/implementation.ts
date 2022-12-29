@@ -201,7 +201,7 @@ export class NoneValue<T> implements ChainableOption<T>, UnwrapableOption<T> {
   okOrElse<E>(fn: () => Promise<E> | E): PromisedResult<T, E> | Result<T, E> {
     const err = fn();
     return err instanceof Promise
-      ? PromisedResult.create(err.then(Err<T, E>))
+      ? PromisedResult.from(err.then(Err<T, E>))
       : Err(err);
   }
 
