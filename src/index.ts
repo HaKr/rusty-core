@@ -1,2 +1,2 @@
 export { None, type Option, Some } from "./option/mod.ts";
-// export { Err, isErr, isOk, Ok, type Result } from './result/result.ts';
+export { Err, Ok, type Result } from "./result/mod.ts";
