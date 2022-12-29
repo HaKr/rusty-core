@@ -29,7 +29,7 @@ export interface Option<T> extends ChainableOption<T> {
    *
    * If the option already contains a value, the old value is dropped.
    *
-   * See also Option::get_or_insert, which doesn’t update the value if the option already contains Some.
+   * See also Option::getOrInsert, which doesn’t update the value if the option already contains Some.
    */
   insert(value: T): T;
 
