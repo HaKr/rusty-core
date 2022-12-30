@@ -1,12 +1,25 @@
 import { None, type Option, Some } from "../option/mod.ts";
-import { Result, ResultType, UnwrapableResult } from "./api.ts";
-import { Ok, PromisedResult, ResultValue } from "./result.ts";
+import { Result, ResultPromise } from "./api.ts";
+import { Ok, PromisedResult, ResultValue, UnwrapableResult } from "./result.ts";
+
+const ResultType = {
+  Ok: Symbol(":ok"),
+  Err: Symbol(":err"),
+};
 
 export class OkValue<T, E> implements UnwrapableResult<T, E> {
-  constructor(private okValue: T) {}
+  #okValue: T;
+
+  constructor(okValue: T) {
+    this.#okValue = okValue;
+  }
 
   [Symbol.iterator](): IterableIterator<T> {
-    return [this.okValue][Symbol.iterator]();
+    return [this.#okValue][Symbol.iterator]();
+  }
+
+  get [Symbol.toStringTag](): string {
+    return `Ok(${this.#okValue})`;
   }
 
   get type(): symbol {
@@ -22,7 +35,7 @@ export class OkValue<T, E> implements UnwrapableResult<T, E> {
   andThen<U>(
     op: (some: T) => Result<U, E> | Promise<Result<U, E>>,
   ): PromisedResult<U, E> | Result<U, E> {
-    const alt = op(this.okValue);
+    const alt = op(this.#okValue);
     return alt instanceof Promise ? PromisedResult.from(alt) : alt;
   }
 
@@ -46,11 +59,19 @@ export class OkValue<T, E> implements UnwrapableResult<T, E> {
   map<U>(
     fn: (some: T) => U | Promise<U>,
   ): Result<U, E> | PromisedResult<U, E> {
-    const newVal = fn(this.okValue);
+    const newVal = fn(this.#okValue);
 
     return newVal instanceof Promise
       ? PromisedResult.from(newVal.then(Ok<U, E>))
       : Ok(newVal);
+  }
+
+  mapErr<F>(fn: (err: E) => Promise<Result<T, F>>): ResultPromise<T, F>;
+  mapErr<F>(fn: (err: E) => Result<T, F>): Result<T, F>;
+  mapErr<F>(
+    _: (err: E) => Result<T, F> | Promise<Result<T, F>>,
+  ): Result<T, F> | ResultPromise<T, F> {
+    return Ok(this.#okValue);
   }
 
   mapOrElse<U>(
@@ -73,11 +94,11 @@ export class OkValue<T, E> implements UnwrapableResult<T, E> {
     _: (err: E) => U | Promise<U>,
     fn: (ok: T) => U | Promise<U>,
   ): U | Promise<U> {
-    return fn(this.okValue);
+    return fn(this.#okValue);
   }
 
   ok(): Option<T> {
-    return Some(this.okValue);
+    return Some(this.#okValue);
   }
 
   or(_: Result<T, E>): Result<T, E> {
@@ -93,17 +114,17 @@ export class OkValue<T, E> implements UnwrapableResult<T, E> {
   }
 
   unwrap(): T {
-    return this.okValue;
+    return this.#okValue;
   }
 
   unwrapOr(_: T): T {
-    return this.okValue;
+    return this.#okValue;
   }
 
   unwrapOrElse(def: (err: E) => T): T;
   unwrapOrElse(def: (err: E) => Promise<T>): T | Promise<T>;
   unwrapOrElse(_: (err: E) => T | Promise<T>): T {
-    return this.okValue;
+    return this.#okValue;
   }
 }
 
@@ -112,6 +133,10 @@ export class ErrValue<T, E> implements UnwrapableResult<T, E> {
 
   [Symbol.iterator](): IterableIterator<T> {
     return [][Symbol.iterator]();
+  }
+
+  get [Symbol.toStringTag](): string {
+    return `Err(${this.errValue})`;
   }
 
   and<U>(_: Result<U, E>): Result<U, E> {
@@ -143,6 +168,16 @@ export class ErrValue<T, E> implements UnwrapableResult<T, E> {
     _: (val: T) => U | Promise<U>,
   ): Result<U, E> | PromisedResult<U, E> {
     return ResultValue.from(this as unknown as ErrValue<U, E>);
+  }
+
+  mapErr<F>(fn: (err: E) => Promise<Result<T, F>>): ResultPromise<T, F>;
+  mapErr<F>(fn: (err: E) => Result<T, F>): Result<T, F>;
+  mapErr<F>(
+    fn: (err: E) => Result<T, F> | Promise<Result<T, F>>,
+  ): Result<T, F> | ResultPromise<T, F> {
+    const alt = fn(this.errValue);
+
+    return (alt instanceof Promise) ? new PromisedResult(alt) : alt;
   }
 
   mapOrElse<U>(

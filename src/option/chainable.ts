@@ -1,4 +1,4 @@
-import { PromisedResult, Result } from "../result/mod.ts";
+import { Result, ResultPromise } from "../result/api.ts";
 import { Option } from "./api.ts";
 import { PromisedOption } from "./option.ts";
 
@@ -78,7 +78,7 @@ export interface ChainableOption<T> {
    * Transforms the {@linkcode Option<T>} into a {@linkcode Result<T, E>},
    * mapping {@linkcode Some(v)} to {@linkcode Ok(v)} and {@linkcode None} to {@linkcode Err(fn())}.
    */
-  okOrElse<E>(fn: () => Promise<E>): PromisedResult<T, E>;
+  okOrElse<E>(fn: () => Promise<E>): ResultPromise<T, E>;
   okOrElse<E>(fn: () => E): Result<T, E>;
 
   /**

@@ -4,7 +4,7 @@ import {
 } from "https://deno.land/std@0.170.0/testing/asserts.ts";
 
 import { None, type Option, Some } from "../src/option/mod.ts";
-import { Err, Ok, type Result } from "../src/result/mod.ts";
+import { Err, Ok, type Result } from "../src/result/api.ts";
 
 Deno.test("result predicates", () => {
   assert(Ok(42).isOk());
@@ -29,26 +29,12 @@ Deno.test("result andThen", () => {
   );
 });
 
-Deno.test("doc", () => {
-  class CannotDivideByZero {}
-
-  function divide(
-    numerator: number,
-    denominator: number,
-  ): Result<number, CannotDivideByZero> {
-    if (denominator === 0) {
-      return Err(new CannotDivideByZero());
-    } else {
-      return Ok(numerator / denominator);
-    }
-  }
-
-  for (const result of [divide(7, 0), divide(2.0, 3.0)]) {
-    result.mapOrElse(
-      (_) => console.error("Cannot divide by zero"),
-      (ok) => console.log(`Result: ${ok}`),
-    );
-  }
-  // "Cannot divide by zero"
-  // "Result: 0.6666666666666666"
+Deno.test("result promises", async () => {
+  assertEquals(
+    await Ok(12)
+      .andThen(async (n) => await Promise.resolve(Ok(n * 4 - 6)))
+      .map((nr) => `${nr}`)
+      .map(async (s) => await Promise.resolve(`[${s}]`)),
+    Ok("[42]"),
+  );
 });

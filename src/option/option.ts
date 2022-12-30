@@ -1,6 +1,6 @@
 // import { Err, Ok, type Result } from "../result/result.ts";
 
-import { PromisedResult, Result } from "../result/mod.ts";
+import { Result, ResultPromise } from "../result/api.ts";
 import { Option } from "./api.ts";
 import { UnwrapableOption } from "./chainable.ts";
 import { NoneValue, SomeValue } from "./implementation.ts";
@@ -111,9 +111,9 @@ export class OptionValue<T> implements Option<T>, UnwrapableOption<T> {
     return this.option.okOr(err);
   }
 
-  okOrElse<E>(fn: () => Promise<E>): PromisedResult<T, E>;
+  okOrElse<E>(fn: () => Promise<E>): ResultPromise<T, E>;
   okOrElse<E>(fn: () => E): Result<T, E>;
-  okOrElse<E>(fn: () => Promise<E> | E): PromisedResult<T, E> | Result<T, E> {
+  okOrElse<E>(fn: () => Promise<E> | E): ResultPromise<T, E> | Result<T, E> {
     return this.option.okOrElse(fn as () => E);
   }
 

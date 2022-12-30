@@ -1,10 +1,20 @@
-export const ResultType = {
-  Ok: Symbol(":ok"),
-  Err: Symbol(":err"),
-};
-
 import { type Option } from "../option/mod.ts";
-import { PromisedResult } from "./result.ts";
+import { ErrValue, OkValue } from "./implementation.ts";
+import { PromisedResult, ResultValue } from "./result.ts";
+
+export function Ok<T, E>(value: T): Result<T, E> {
+  return ResultValue.from(new OkValue<T, E>(value));
+}
+
+export function Err<T, E>(err: E): Result<T, E> {
+  return ResultValue.from(new ErrValue<T, E>(err));
+}
+
+export function resultFrom<T, E>(
+  from: Promise<Result<T, E>>,
+): ResultPromise<T, E> {
+  return PromisedResult.from(from);
+}
 
 export interface Result<T, E> {
   [Symbol.iterator]: () => IterableIterator<T>;
@@ -22,7 +32,7 @@ export interface Result<T, E> {
    *
    * This function can be used for control flow based on Result values.
    */
-  andThen<U>(op: (some: T) => Promise<Result<U, E>>): PromisedResult<U, E>;
+  andThen<U>(op: (some: T) => Promise<Result<U, E>>): ResultPromise<U, E>;
   andThen<U>(op: (some: T) => Result<U, E>): Result<U, E>;
 
   /**
@@ -41,8 +51,16 @@ export interface Result<T, E> {
    *
    * This function can be used to compose the results of two functions.
    */
-  map<U>(fn: (some: T) => Promise<U>): PromisedResult<U, E>;
+  map<U>(fn: (some: T) => Promise<U>): ResultPromise<U, E>;
   map<U>(fn: (some: T) => U): Result<U, E>;
+
+  /**
+   * Maps a Result<T, E> to Result<T, F> by applying a function to a contained Err value, leaving an Ok value untouched.
+   *
+   * This function can be used to pass through a successful result while handling an error.
+   */
+  mapErr<F>(fn: (err: E) => Promise<Result<T, F>>): ResultPromise<T, F>;
+  mapErr<F>(fn: (err: E) => Result<T, F>): Result<T, F>;
 
   /**
    * Maps a {@linkcode Result<T, E>} to U by applying fallback function default to a contained {@linkcode Err} value,
@@ -85,7 +103,7 @@ export interface Result<T, E> {
   /**
    * Returns the result if it contains a value, otherwise calls f and returns the result.
    */
-  orElse(fn: (err: E) => Promise<Result<T, E>>): PromisedResult<T, E>;
+  orElse(fn: (err: E) => Promise<Result<T, E>>): ResultPromise<T, E>;
   orElse(fn: (err: E) => Result<T, E>): Result<T, E>;
 
   /**
@@ -198,10 +216,4 @@ export interface ResultPromise<T, E> extends Promise<Result<T, E>> {
    */
   unwrapOrElse(def: (err: E) => T): Promise<T>;
   unwrapOrElse(def: (err: E) => Promise<T>): Promise<T>;
-}
-
-export interface UnwrapableResult<T, E> extends Result<T, E> {
-  type: symbol;
-
-  unwrap(): T;
 }

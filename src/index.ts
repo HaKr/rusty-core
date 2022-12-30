@@ -5,4 +5,4 @@ export {
   type Result,
   resultFrom,
   type ResultPromise,
-} from "./result/mod.ts";
+} from "./result/api.ts";

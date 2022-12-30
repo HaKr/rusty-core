@@ -1,4 +1,5 @@
-import { Err, Ok, PromisedResult, type Result } from "../result/mod.ts";
+import { Err, Ok, type Result, type ResultPromise } from "../result/api.ts";
+import { resultFrom } from "../result/result.ts";
 import { Option, OptionType } from "./api.ts";
 import { ChainableOption, UnwrapableOption } from "./chainable.ts";
 import { None, OptionValue, PromisedOption, Some } from "./option.ts";
@@ -97,9 +98,9 @@ export class SomeValue<T> implements ChainableOption<T>, UnwrapableOption<T> {
     return Ok(this.value);
   }
 
-  okOrElse<E>(fn: () => Promise<E>): PromisedResult<T, E>;
+  okOrElse<E>(fn: () => Promise<E>): ResultPromise<T, E>;
   okOrElse<E>(fn: () => E): Result<T, E>;
-  okOrElse<E>(_: unknown): PromisedResult<T, E> | Result<T, E> {
+  okOrElse<E>(_: unknown): ResultPromise<T, E> | Result<T, E> {
     return Ok(this.value);
   }
 
@@ -196,13 +197,11 @@ export class NoneValue<T> implements ChainableOption<T>, UnwrapableOption<T> {
     return Err(err);
   }
 
-  okOrElse<E>(fn: () => Promise<E>): PromisedResult<T, E>;
+  okOrElse<E>(fn: () => Promise<E>): ResultPromise<T, E>;
   okOrElse<E>(fn: () => E): Result<T, E>;
-  okOrElse<E>(fn: () => Promise<E> | E): PromisedResult<T, E> | Result<T, E> {
+  okOrElse<E>(fn: () => Promise<E> | E): ResultPromise<T, E> | Result<T, E> {
     const err = fn();
-    return err instanceof Promise
-      ? PromisedResult.from(err.then(Err<T, E>))
-      : Err(err);
+    return err instanceof Promise ? resultFrom(err.then(Err<T, E>)) : Err(err);
   }
 
   or(optb: Option<T>): Option<T> {

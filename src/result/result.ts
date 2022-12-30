@@ -1,5 +1,5 @@
 import { type Option } from "../option/mod.ts";
-import { type Result, ResultPromise, type UnwrapableResult } from "./api.ts";
+import { type Result, ResultPromise } from "./api.ts";
 import { ErrValue, OkValue } from "./implementation.ts";
 
 export function Ok<T, E>(value: T): Result<T, E> {
@@ -11,18 +11,32 @@ export function Err<T, E>(err: E): Result<T, E> {
 }
 
 export function resultFrom<T, E>(
-  promise: Promise<Result<T, E>>,
+  from: Promise<Result<T, E>>,
 ): ResultPromise<T, E> {
-  return PromisedResult.from(promise);
+  return PromisedResult.from(from);
+}
+
+export interface UnwrapableResult<T, E> extends Result<T, E> {
+  type: symbol;
+
+  unwrap(): T;
 }
 
 export class ResultValue<T, E> implements Result<T, E>, UnwrapableResult<T, E> {
+  #result: UnwrapableResult<T, E>;
   constructor(
-    private result: UnwrapableResult<T, E>,
-  ) {}
+    result: UnwrapableResult<T, E>,
+  ) {
+    this.#result = result;
+  }
+
+  get [Symbol.toStringTag](): string {
+    // deno-lint-ignore no-explicit-any
+    return `${(this.#result as any)[Symbol.toStringTag]}`;
+  }
 
   get type(): symbol {
-    return this.result.type;
+    return this.#result.type;
   }
 
   static from<T, E>(result: UnwrapableResult<T, E>): Result<T, E> {
@@ -30,7 +44,7 @@ export class ResultValue<T, E> implements Result<T, E>, UnwrapableResult<T, E> {
   }
 
   and<U>(res: Result<U, E>): Result<U, E> {
-    return this.result.and(res);
+    return this.#result.and(res);
   }
 
   andThen<U>(fn: (some: T) => Promise<Result<U, E>>): PromisedResult<U, E>;
@@ -38,18 +52,18 @@ export class ResultValue<T, E> implements Result<T, E>, UnwrapableResult<T, E> {
   andThen<U>(
     fn: (some: T) => Result<U, E> | Promise<Result<U, E>>,
   ): PromisedResult<U, E> | Result<U, E> {
-    return this.result.andThen(fn as (some: T) => Result<U, E>);
+    return this.#result.andThen(fn as (some: T) => Result<U, E>);
   }
 
   err(): Option<E> {
-    return this.result.err();
+    return this.#result.err();
   }
 
   isOk(): boolean {
-    return this.result.isOk();
+    return this.#result.isOk();
   }
   isErr(): boolean {
-    return this.result.isErr();
+    return this.#result.isErr();
   }
 
   map<U>(fn: (some: T) => Promise<U>): PromisedResult<U, E>;
@@ -57,7 +71,15 @@ export class ResultValue<T, E> implements Result<T, E>, UnwrapableResult<T, E> {
   map<U>(
     fn: (some: T) => U | Promise<U>,
   ): PromisedResult<U, E> | Result<U, E> {
-    return this.result.map(fn as (some: T) => U);
+    return this.#result.map(fn as (some: T) => U);
+  }
+
+  mapErr<F>(fn: (err: E) => Promise<Result<T, F>>): ResultPromise<T, F>;
+  mapErr<F>(fn: (err: E) => Result<T, F>): Result<T, F>;
+  mapErr<F>(
+    fn: (err: E) => Result<T, F> | Promise<Result<T, F>>,
+  ): Result<T, F> | ResultPromise<T, F> {
+    return this.#result.mapErr(fn as (err: E) => Result<T, F>);
   }
 
   mapOrElse<U>(
@@ -80,15 +102,15 @@ export class ResultValue<T, E> implements Result<T, E>, UnwrapableResult<T, E> {
     def: (err: E) => U | Promise<U>,
     fn: (ok: T) => U | Promise<U>,
   ): U | Promise<U> {
-    return this.result.mapOrElse(def as (err: E) => U, fn as (ok: T) => U);
+    return this.#result.mapOrElse(def as (err: E) => U, fn as (ok: T) => U);
   }
 
   ok(): Option<T> {
-    return this.result.ok();
+    return this.#result.ok();
   }
 
   or(optb: Result<T, E>): Result<T, E> {
-    return this.result.or(optb);
+    return this.#result.or(optb);
   }
 
   orElse(fn: (err: E) => Promise<Result<T, E>>): PromisedResult<T, E>;
@@ -96,36 +118,35 @@ export class ResultValue<T, E> implements Result<T, E>, UnwrapableResult<T, E> {
   orElse(
     fn: (err: E) => Result<T, E> | Promise<Result<T, E>>,
   ): PromisedResult<T, E> | Result<T, E> {
-    return this.result.orElse(fn as (err: E) => Result<T, E>);
+    return this.#result.orElse(fn as (err: E) => Result<T, E>);
   }
 
   unwrap(): T {
-    return this.result.unwrap();
+    return this.#result.unwrap();
   }
 
   unwrapOr(def: T): T {
-    return this.result.unwrapOr(def);
+    return this.#result.unwrapOr(def);
   }
 
   unwrapOrElse(def: (err: E) => T): T;
   unwrapOrElse(def: (err: E) => Promise<T>): T | Promise<T>;
   unwrapOrElse(def: (err: E) => T | Promise<T>): T | Promise<T> {
-    return this.result.unwrapOrElse(def as (err: E) => T);
+    return this.#result.unwrapOrElse(def as (err: E) => T);
   }
 
   [Symbol.iterator]() {
-    return this.result[Symbol.iterator]();
+    return this.#result[Symbol.iterator]();
   }
 }
 
-export class PromisedResult<T, E> extends Promise<Result<T, E>>
-  implements ResultPromise<T, E> {
+export class PromisedResult<T, E> implements ResultPromise<T, E> {
   constructor(
     private promise: Promise<Result<T, E>>,
-  ) {
-    super((resolve) => {
-      resolve(undefined as unknown as Result<T, E>);
-    });
+  ) {}
+
+  get [Symbol.toStringTag](): string {
+    return this.promise[Symbol.toStringTag];
   }
 
   static from<U, E>(promise: Promise<Result<U, E>>): PromisedResult<U, E> {
@@ -138,12 +159,24 @@ export class PromisedResult<T, E> extends Promise<Result<T, E>>
       | undefined
       | null,
     onrejected?:
-      // deno-lint-ignore no-explicit-any
-      | ((reason: any) => TResult2 | PromiseLike<TResult2>)
+      | ((reason: unknown) => TResult2 | PromiseLike<TResult2>)
       | undefined
       | null,
   ): Promise<TResult1 | TResult2> {
     return this.promise.then(onfulfilled, onrejected);
+  }
+
+  catch<TResult = never>(
+    onrejected?:
+      | ((reason: unknown) => TResult | PromiseLike<TResult>)
+      | null
+      | undefined,
+  ): Promise<Result<T, E> | TResult> {
+    return this.promise.catch(onrejected);
+  }
+
+  finally(onfinally?: (() => void) | null | undefined): Promise<Result<T, E>> {
+    return this.promise.finally(onfinally);
   }
 
   and<U>(res: Result<U, E>): ResultPromise<U, E> {
@@ -177,6 +210,18 @@ export class PromisedResult<T, E> extends Promise<Result<T, E>>
   map<U>(fn: unknown): ResultPromise<U, E> {
     return PromisedResult.from(
       this.promise.then((result) => result.map(fn as (some: T) => Promise<U>)),
+    );
+  }
+
+  mapErr<F>(fn: (err: E) => Promise<Result<T, F>>): ResultPromise<T, F>;
+  mapErr<F>(fn: (err: E) => Result<T, F>): Result<T, F>;
+  mapErr<F>(
+    fn: (err: E) => Result<T, F> | Promise<Result<T, F>>,
+  ): Result<T, F> | ResultPromise<T, F> {
+    return PromisedResult.from(
+      this.promise.then((result) =>
+        result.mapErr(fn as (err: E) => Promise<Result<T, F>>)
+      ),
     );
   }
 
