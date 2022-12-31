@@ -1,6 +1,5 @@
 import { Result, ResultPromise } from "../result/api.ts";
-import { Option } from "./api.ts";
-import { PromisedOption } from "./option.ts";
+import type { Option, OptionPromise } from "./api.ts";
 
 export interface ChainableOption<T> {
   [Symbol.iterator]: () => IterableIterator<T>;
@@ -18,7 +17,7 @@ export interface ChainableOption<T> {
    *
    * Some languages call this operation flatmap.
    */
-  andThen<U>(fn: (some: T) => Promise<Option<U>>): PromisedOption<U>;
+  andThen<U>(fn: (some: T) => Promise<Option<U>>): OptionPromise<U>;
   andThen<U>(fn: (some: T) => Option<U>): Option<U>;
 
   /**
@@ -41,7 +40,7 @@ export interface ChainableOption<T> {
   /**
    * Maps an Option<T> to an Option<U> by applying a function to a contained value.
    */
-  map<U>(fn: (some: T) => Promise<U>): PromisedOption<U>;
+  map<U>(fn: (some: T) => Promise<U>): OptionPromise<U>;
   map<U>(fn: (some: T) => U): Option<U>;
 
   /**
@@ -50,15 +49,15 @@ export interface ChainableOption<T> {
   mapOrElse<U>(
     def: () => Promise<U>,
     fn: (some: T) => Promise<U>,
-  ): PromisedOption<U>;
+  ): OptionPromise<U>;
   mapOrElse<U>(
     def: () => Promise<U>,
     fn: (some: T) => U,
-  ): PromisedOption<U> | Option<U>;
+  ): OptionPromise<U> | Option<U>;
   mapOrElse<U>(
     def: () => U,
     fn: (some: T) => Promise<U>,
-  ): PromisedOption<U> | Option<U>;
+  ): OptionPromise<U> | Option<U>;
 
   mapOrElse<U>(
     def: () => U,
@@ -92,7 +91,7 @@ export interface ChainableOption<T> {
   /**
    * Returns the option if it contains a value, otherwise calls f and returns the result.
    */
-  orElse(fn: () => Promise<Option<T>>): PromisedOption<T>;
+  orElse(fn: () => Promise<Option<T>>): OptionPromise<T>;
   orElse(fn: () => Option<T>): Option<T>;
 
   /**
