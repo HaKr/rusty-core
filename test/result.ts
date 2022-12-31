@@ -1,10 +1,10 @@
 import {
   assert,
   assertEquals,
-} from "https://deno.land/std@0.170.0/testing/asserts.ts";
+} from "https://deno.land/std@0.170.0/testing/asserts";
 
-import { None, type Option, Some } from "../src/option/mod.ts";
-import { Err, Ok, type Result } from "../src/result/api.ts";
+import { None, type Option, Some } from "../src/option/mod";
+import { Err, Ok, type Result } from "../src/result/api";
 
 Deno.test("result predicates", () => {
   assert(Ok(42).isOk());

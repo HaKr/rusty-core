@@ -1,5 +1,5 @@
-import { Result, ResultPromise } from "../result/api.ts";
-import type { Option, OptionPromise } from "./api.ts";
+import { Result, ResultPromise } from "../result/api";
+import type { Option, OptionPromise } from "./api";
 
 export interface ChainableOption<T> {
   [Symbol.iterator]: () => IterableIterator<T>;

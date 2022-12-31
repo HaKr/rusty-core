@@ -2,10 +2,10 @@ import {
   assert,
   assertEquals,
   assertNotEquals,
-} from "https://deno.land/std@0.170.0/testing/asserts.ts";
-import { optionFrom } from "../src/option/api.ts";
+} from "https://deno.land/std@0.170.0/testing/asserts";
+import { optionFrom } from "../src/option/api";
 
-import { None, Some } from "../src/option/api.ts";
+import { None, Some } from "../src/option/api";
 
 Deno.test("option predicates", () => {
   assert(Some(42).isSome());

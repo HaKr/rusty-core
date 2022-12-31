@@ -1,8 +1,8 @@
-import { Err, Ok, type Result, type ResultPromise } from "../result/api.ts";
-import { resultFrom } from "../result/result.ts";
-import { None, Option, optionFrom, type OptionPromise, Some } from "./api.ts";
-import { ChainableOption, UnwrapableOption } from "./chainable.ts";
-import { OptionValue } from "./option.ts";
+import { Err, Ok, type Result, type ResultPromise } from "../result/api";
+import { resultFrom } from "../result/result";
+import { None, Option, optionFrom, type OptionPromise, Some } from "./api";
+import { ChainableOption, UnwrapableOption } from "./chainable";
+import { OptionValue } from "./option";
 
 const OptionType = {
   Some: Symbol(":some"),

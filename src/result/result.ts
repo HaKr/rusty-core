@@ -1,6 +1,6 @@
-import { type Option } from "../option/mod.ts";
-import { type Result, ResultPromise } from "./api.ts";
-import { ErrValue, OkValue } from "./implementation.ts";
+import { type Option } from "../option/mod";
+import { type Result, ResultPromise } from "./api";
+import { ErrValue, OkValue } from "./implementation";
 
 export function Ok<T, E>(value: T): Result<T, E> {
   return ResultValue.from(new OkValue<T, E>(value));

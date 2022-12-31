@@ -1,7 +1,7 @@
-import { type ResultPromise } from "../result/api.ts";
-import { type ChainableOption } from "./chainable.ts";
-import { NoneValue, SomeValue } from "./implementation.ts";
-import { OptionValue, PromisedOption } from "./option.ts";
+import { type ResultPromise } from "../result/api";
+import { type ChainableOption } from "./chainable";
+import { NoneValue, SomeValue } from "./implementation";
+import { OptionValue, PromisedOption } from "./option";
 
 export function Some<T>(value: T): Option<T> {
   return OptionValue.from(new SomeValue<T>(value));

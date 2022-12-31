@@ -1,10 +1,10 @@
-// import { Err, Ok, type Result } from "../result/result.ts";
+// import { Err, Ok, type Result } from "../result/result";
 
-import { Result, ResultPromise } from "../result/api.ts";
-import { resultFrom } from "../result/result.ts";
-import type { Option, OptionPromise } from "./api.ts";
-import { ChainableOption } from "./chainable.ts";
-import { NoneValue, SomeValue } from "./implementation.ts";
+import { Result, ResultPromise } from "../result/api";
+import { resultFrom } from "../result/result";
+import type { Option, OptionPromise } from "./api";
+import { ChainableOption } from "./chainable";
+import { NoneValue, SomeValue } from "./implementation";
 
 export interface UnwrapableOption<T> extends ChainableOption<T> {
   type: symbol;
