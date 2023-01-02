@@ -1,6 +1,6 @@
-import { type Option } from "../option/mod";
-import { ErrValue, OkValue } from "./implementation";
-import { PromisedResult, ResultValue } from "./result";
+import { type Option } from "../option/mod.js";
+import { ErrValue, OkValue } from "./implementation.js";
+import { PromisedResult, ResultValue } from "./result.js";
 
 export function Ok<T, E>(value: T): Result<T, E> {
   return ResultValue.from(new OkValue<T, E>(value));

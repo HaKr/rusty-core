@@ -1,10 +1,8 @@
-// import { Err, Ok, type Result } from "../result/result";
-
-import { Result, ResultPromise } from "../result/api";
-import { resultFrom } from "../result/result";
-import type { Option, OptionPromise } from "./api";
-import { ChainableOption } from "./chainable";
-import { NoneValue, SomeValue } from "./implementation";
+import { Result, ResultPromise } from "../result/api.js";
+import { resultFrom } from "../result/result.js";
+import type { Option, OptionPromise } from "./api.js";
+import { ChainableOption } from "./chainable.js";
+import { NoneValue, SomeValue } from "./implementation.js";
 
 export interface UnwrapableOption<T> extends ChainableOption<T> {
   type: symbol;
@@ -17,10 +15,10 @@ export class OptionValue<T> implements Option<T>, UnwrapableOption<T> {
     private option: UnwrapableOption<T>,
   ) {}
 
-  get [Symbol.toStringTag](): string {
-    // deno-lint-ignore no-explicit-any
-    return `${(this.option as any)[Symbol.toStringTag]}`;
-  }
+  // get [Symbol.toStringTag](): string {
+  //   // deno-lint-ignore no-explicit-any
+  //   return `${(this.option as any)[Symbol.toStringTag]}`;
+  // }
 
   get type(): symbol {
     return this.option.type;
@@ -170,16 +168,16 @@ export class OptionValue<T> implements Option<T>, UnwrapableOption<T> {
 }
 
 export class PromisedOption<T> implements OptionPromise<T> {
-  #promise: Promise<Option<T>>;
+  promise: Promise<Option<T>>;
 
   constructor(
     promise: Promise<Option<T>>,
   ) {
-    this.#promise = promise;
+    this.promise = promise;
   }
 
   get [Symbol.toStringTag](): string {
-    return this.#promise[Symbol.toStringTag];
+    return this.promise[Symbol.toStringTag];
   }
 
   static create<U>(promise: Promise<Option<U>>): OptionPromise<U> {
@@ -197,7 +195,7 @@ export class PromisedOption<T> implements OptionPromise<T> {
       | undefined
       | null,
   ): Promise<TResult1 | TResult2> {
-    return this.#promise.then(onfulfilled, onrejected);
+    return this.promise.then(onfulfilled, onrejected);
   }
 
   catch<TResult = never>(
@@ -206,16 +204,16 @@ export class PromisedOption<T> implements OptionPromise<T> {
       | null
       | undefined,
   ): Promise<Option<T> | TResult> {
-    return this.#promise.catch(onrejected);
+    return this.promise.catch(onrejected);
   }
 
   finally(onfinally?: (() => void) | null | undefined): Promise<Option<T>> {
-    return this.#promise.finally(onfinally);
+    return this.promise.finally(onfinally);
   }
 
   and<U>(optb: Option<U>): OptionPromise<U> {
     return PromisedOption.create(
-      this.#promise.then((option) => option.and(optb)),
+      this.promise.then((option) => option.and(optb)),
     );
   }
 
@@ -225,7 +223,7 @@ export class PromisedOption<T> implements OptionPromise<T> {
     fn: (some: T) => Option<U> | Promise<Option<U>>,
   ): OptionPromise<U> {
     return PromisedOption.create(
-      this.#promise.then((option) => {
+      this.promise.then((option) => {
         return option.andThen(fn as (some: T) => Option<U>);
       }),
     );
@@ -233,7 +231,7 @@ export class PromisedOption<T> implements OptionPromise<T> {
 
   filter(predicate: (some: T) => boolean): OptionPromise<T> {
     return PromisedOption.create(
-      this.#promise.then((option) => option.filter(predicate)),
+      this.promise.then((option) => option.filter(predicate)),
     );
   }
 
@@ -241,25 +239,25 @@ export class PromisedOption<T> implements OptionPromise<T> {
   flatten<U>(this: Option<U>): OptionPromise<U>;
   flatten<U>(this: Option<U> | Option<Option<U>>): OptionPromise<U> {
     return PromisedOption.create(
-      (this as unknown as PromisedOption<T>).#promise.then((option) =>
+      (this as unknown as PromisedOption<T>).promise.then((option) =>
         option.flatten() as unknown as Option<U>
       ),
     );
   }
 
   isSome(): Promise<boolean> {
-    return this.#promise.then((option) => option.isSome());
+    return this.promise.then((option) => option.isSome());
   }
 
   isNone(): Promise<boolean> {
-    return this.#promise.then((option) => option.isNone());
+    return this.promise.then((option) => option.isNone());
   }
 
   map<U>(fn: (some: T) => Promise<U>): OptionPromise<U>;
   map<U>(fn: (some: T) => U): OptionPromise<U>;
   map<U>(fn: (some: T) => Promise<U> | U): OptionPromise<U> {
     return PromisedOption.create(
-      this.#promise.then((option) => option.map(fn as (some: T) => U)),
+      this.promise.then((option) => option.map(fn as (some: T) => U)),
     );
   }
 
@@ -275,7 +273,7 @@ export class PromisedOption<T> implements OptionPromise<T> {
     fn: (some: T) => U | Promise<U>,
   ): OptionPromise<U> {
     return PromisedOption.create(
-      this.#promise.then((option) =>
+      this.promise.then((option) =>
         option.mapOrElse(def as () => U, fn as (some: T) => U)
       ),
     );
@@ -283,20 +281,20 @@ export class PromisedOption<T> implements OptionPromise<T> {
 
   okOr<E>(err: E): ResultPromise<T, E> {
     return resultFrom(
-      this.#promise.then((option) => option.okOr(err)),
+      this.promise.then((option) => option.okOr(err)),
     );
   }
 
   okOrElse<E>(fn: () => Promise<E>): ResultPromise<T, E>;
   okOrElse<E>(fn: () => E | Promise<E>): ResultPromise<T, E> {
     return resultFrom(
-      this.#promise.then((option) => option.okOrElse(fn as () => Promise<E>)),
+      this.promise.then((option) => option.okOrElse(fn as () => Promise<E>)),
     );
   }
 
   or(optb: Option<T>): OptionPromise<T> {
     return PromisedOption.create(
-      this.#promise.then((option) => option.or(optb)),
+      this.promise.then((option) => option.or(optb)),
     );
   }
 
@@ -304,25 +302,25 @@ export class PromisedOption<T> implements OptionPromise<T> {
   orElse(fn: () => Option<T>): OptionPromise<T>;
   orElse(fn: () => Option<T> | Promise<Option<T>>): OptionPromise<T> {
     return PromisedOption.create(
-      this.#promise.then((option) => {
+      this.promise.then((option) => {
         return option.orElse(fn as () => Option<T>);
       }),
     );
   }
 
   unwrapOr(def: T): Promise<T> {
-    return this.#promise.then((option) => option.unwrapOr(def));
+    return this.promise.then((option) => option.unwrapOr(def));
   }
 
   unwrapOrElse(def: () => T): Promise<T>;
   unwrapOrElse(def: () => Promise<T>): Promise<T>;
   unwrapOrElse(def: () => T | Promise<T>): Promise<T> {
-    return this.#promise.then((option) => option.unwrapOrElse(def as () => T));
+    return this.promise.then((option) => option.unwrapOrElse(def as () => T));
   }
 
   xor(optb: Option<T>): OptionPromise<T> {
     return PromisedOption.create(
-      this.#promise.then((option) => option.xor(optb)),
+      this.promise.then((option) => option.xor(optb)),
     );
   }
 }
