@@ -1,4 +1,4 @@
-export { None, type Option, Some } from "./option/mod";
+export { None, type Option, Some } from "./option/api";
 export {
   Err,
   Ok,

@@ -3,6 +3,7 @@
   "version": "1.0.3",
   "description": "Option and Result as inspired by https://doc.rust-lang.org/stable/core",
   "main": "lib/index.js",
+  "type": "module",
   "directories": {
     "test": "test"
   },
