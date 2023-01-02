@@ -4,7 +4,7 @@
 		"declaration": true,
 		"target": "es6",
 		"lib": ["ES2022"],
-		"module": "ES2022",
+		"module": "CommonJS",
 		"moduleResolution": "Node",
 		"esModuleInterop":true,
 		"strict": true,
@@ -13,7 +13,7 @@
 		"forceConsistentCasingInFileNames": true,
 		"sourceMap": true,
 	},
-   "include": ["src","test"],
+   "include": ["src"],
 	"ts-node": {
 		"emit": true
 	}

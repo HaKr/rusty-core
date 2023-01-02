@@ -1,6 +1,6 @@
-import { None, type Option, Some } from "../option/mod.js";
-import { Result, ResultPromise } from "./api.js";
-import { Ok, PromisedResult, ResultValue, UnwrapableResult } from "./result.js";
+import { None, type Option, Some } from "../option/mod";
+import { Result, ResultPromise } from "./api";
+import { Ok, PromisedResult, ResultValue, UnwrapableResult } from "./result";
 
 const ResultType = {
   Ok: Symbol(":ok"),

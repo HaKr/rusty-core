@@ -1,8 +1,8 @@
-import { Result, ResultPromise } from "../result/api.js";
-import { resultFrom } from "../result/result.js";
-import type { Option, OptionPromise } from "./api.js";
-import { ChainableOption } from "./chainable.js";
-import { NoneValue, SomeValue } from "./implementation.js";
+import { Result, ResultPromise } from "../result/api";
+import { resultFrom } from "../result/result";
+import type { Option, OptionPromise } from "./api";
+import { ChainableOption } from "./chainable";
+import { NoneValue, SomeValue } from "./implementation";
 
 export interface UnwrapableOption<T> extends ChainableOption<T> {
   type: symbol;

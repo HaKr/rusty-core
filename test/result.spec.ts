@@ -1,8 +1,8 @@
 import { it } from "mocha";
 import assert from "assert";
 
-import { None, type Option, Some } from "../src/option/api.js";
-import { Err, Ok, type Result } from "../src/result/api.js";
+import { None, type Option, Some } from "../src/option/api";
+import { Err, Ok, type Result } from "../src/result/api";
 
 it("result predicates", () => {
   assert(Ok(42).isOk());

@@ -1,0 +1,7 @@
+{
+	"extends": "../tsconfig.json",
+   	"ixxnclude": ["test"],
+	"ts-node": {
+		"emit": true
+	}
+}

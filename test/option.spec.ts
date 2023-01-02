@@ -1,7 +1,7 @@
 import { it } from "mocha";
 import assert from "assert";
 
-import { None, optionFrom, Some } from "../src/option/api.js";
+import { None, optionFrom, Some } from "../src/option/api";
 
 it("option predicates", () => {
   assert(Some(42).isSome());
