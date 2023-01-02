@@ -15,11 +15,6 @@ export class OptionValue<T> implements Option<T>, UnwrapableOption<T> {
     private option: UnwrapableOption<T>,
   ) {}
 
-  // get [Symbol.toStringTag](): string {
-  //   // deno-lint-ignore no-explicit-any
-  //   return `${(this.option as any)[Symbol.toStringTag]}`;
-  // }
-
   get type(): symbol {
     return this.option.type;
   }

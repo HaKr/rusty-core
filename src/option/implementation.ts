@@ -19,10 +19,6 @@ export class SomeValue<T> implements ChainableOption<T>, UnwrapableOption<T> {
     return [this.value][Symbol.iterator]();
   }
 
-  // get [Symbol.toStringTag](): string {
-  //   return `Some(${this.#value})`;
-  // }
-
   get type(): symbol {
     return OptionType.Some;
   }
@@ -154,10 +150,6 @@ export class NoneValue<T> implements ChainableOption<T>, UnwrapableOption<T> {
   [Symbol.iterator](): IterableIterator<T> {
     return [][Symbol.iterator]();
   }
-
-  // get [Symbol.toStringTag](): string {
-  //   return `None`;
-  // }
 
   isSome(): boolean {
     return false;

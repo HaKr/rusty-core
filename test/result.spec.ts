@@ -39,3 +39,12 @@ it("result promises", async () => {
     Ok("[42]"),
   );
 });
+
+it("result mapOrElse is different", async () => {
+  assert.deepStrictEqual(
+    await Ok(12)
+      .andThen(async (n) => await Promise.resolve(Ok(n * 4 - 6)))
+      .mapOrElse(() => Err<string, string>("nope"), (nr) => Ok(`[${nr}]`)),
+    Ok("[42]"),
+  );
+});

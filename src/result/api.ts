@@ -171,15 +171,15 @@ export interface ResultPromise<T, E> extends Promise<Result<T, E>> {
   mapOrElse<U>(
     def: (err: E) => Promise<U>,
     fn: (ok: T) => U,
-  ): Promise<U> | U;
+  ): Promise<U>;
   mapOrElse<U>(
     def: (err: E) => U,
     fn: (ok: T) => Promise<U>,
-  ): Promise<U> | U;
+  ): Promise<U>;
   mapOrElse<U>(
     def: (err: E) => U,
     fn: (ok: T) => U,
-  ): U;
+  ): Promise<U>;
 
   /**
    * Converts from {@linkcode Result<T, E>} to {@linkcode Option<T>}.
