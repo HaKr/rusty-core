@@ -38,3 +38,12 @@ Deno.test("result promises", async () => {
     Ok("[42]"),
   );
 });
+
+Deno.test("result mapOrElse is different", async () => {
+  assertEquals(
+    await Ok(12)
+      .andThen(async (n) => await Promise.resolve(Ok(n * 4 - 6)))
+      .mapOrElse(() => Err<string, string>("nope"), (nr) => Ok(`[${nr}]`)),
+    Ok("[42]"),
+  );
+});

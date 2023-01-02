@@ -10,17 +10,13 @@ const OptionType = {
 };
 
 export class SomeValue<T> implements ChainableOption<T>, UnwrapableOption<T> {
-  #value: T;
+  value: T;
   constructor(value: T) {
-    this.#value = value;
+    this.value = value;
   }
 
   [Symbol.iterator](): IterableIterator<T> {
-    return [this.#value][Symbol.iterator]();
-  }
-
-  get [Symbol.toStringTag](): string {
-    return `Some(${this.#value})`;
+    return [this.value][Symbol.iterator]();
   }
 
   get type(): symbol {
@@ -36,13 +32,13 @@ export class SomeValue<T> implements ChainableOption<T>, UnwrapableOption<T> {
   andThen<U>(
     fn: (some: T) => Option<U> | Promise<Option<U>>,
   ): OptionPromise<U> | Option<U> {
-    const alt = fn(this.#value);
+    const alt = fn(this.value);
     return alt instanceof Promise ? optionFrom(alt) : alt;
   }
 
   filter(predicate: (some: T) => boolean): Option<T> {
     return OptionValue.from(
-      predicate(this.#value) ? this : new NoneValue<T>(),
+      predicate(this.value) ? this : new NoneValue<T>(),
     );
   }
 
@@ -71,7 +67,7 @@ export class SomeValue<T> implements ChainableOption<T>, UnwrapableOption<T> {
   map<U>(fn: (some: T) => Promise<U>): OptionPromise<U>;
   map<U>(fn: (some: T) => U): U;
   map<U>(fn: (some: T) => U | Promise<U>): Option<U> | OptionPromise<U> {
-    const newVal = fn(this.#value);
+    const newVal = fn(this.value);
 
     return newVal instanceof Promise
       ? optionFrom(newVal.then(Some))
@@ -99,7 +95,7 @@ export class SomeValue<T> implements ChainableOption<T>, UnwrapableOption<T> {
     _: () => U | Promise<U>,
     fn: (some: T) => U | Promise<U>,
   ): Option<U> | OptionPromise<U> {
-    const newVal = fn(this.#value);
+    const newVal = fn(this.value);
 
     return newVal instanceof Promise
       ? optionFrom(newVal.then(Some))
@@ -107,13 +103,13 @@ export class SomeValue<T> implements ChainableOption<T>, UnwrapableOption<T> {
   }
 
   okOr<E>(_: E): Result<T, E> {
-    return Ok(this.#value);
+    return Ok(this.value);
   }
 
   okOrElse<E>(fn: () => Promise<E>): ResultPromise<T, E>;
   okOrElse<E>(fn: () => E): Result<T, E>;
   okOrElse<E>(_: unknown): ResultPromise<T, E> | Result<T, E> {
-    return Ok(this.#value);
+    return Ok(this.value);
   }
 
   or(_: Option<T>): Option<T> {
@@ -129,17 +125,17 @@ export class SomeValue<T> implements ChainableOption<T>, UnwrapableOption<T> {
   }
 
   unwrap(): T {
-    return this.#value;
+    return this.value;
   }
 
   unwrapOr(_: T): T {
-    return this.#value;
+    return this.value;
   }
 
   unwrapOrElse(def: () => T): T;
   unwrapOrElse(def: () => Promise<T>): T | Promise<T>;
   unwrapOrElse(_: unknown): T {
-    return this.#value;
+    return this.value;
   }
 
   xor(optb: Option<T>): Option<T> {
@@ -153,10 +149,6 @@ export class NoneValue<T> implements ChainableOption<T>, UnwrapableOption<T> {
 
   [Symbol.iterator](): IterableIterator<T> {
     return [][Symbol.iterator]();
-  }
-
-  get [Symbol.toStringTag](): string {
-    return `None`;
   }
 
   isSome(): boolean {
