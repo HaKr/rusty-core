@@ -3,7 +3,7 @@
 		"outDir": "lib",
 		"declaration": true,
 		"target": "es6",
-		"lib": ["ES2022"],
+		"lib": ["ES2022", "DOM"],
 		"module": "CommonJS",
 		"moduleResolution": "Node",
 		"esModuleInterop":true,

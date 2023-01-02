@@ -20,22 +20,41 @@ Also, great inspiration for the implementation came from the
 This implementation supports the in-place modifiers of Option (insert, take), as
 well as chaining of Promises to either type.
 
-### Example
+### A note on Promises and async/await
 
-This contrived example shows how async routines can be used in the orElse,
-andThen, and mapOrElse methods, where those methods can be chained directly.
+Both `Option` and `Result` have several chaining methods, like andThen, orElse
+and map. Those methods accept one or more callback functions that can be async.
+
+The example below demonstrates how Promises and async callbacks can be chained
+with the andThen and mapOrElse.
+
+#### Example
 
 ```typescript
-assertEquals(
-  await None<number>()
-    .orElse(async () => await Promise.resolve(None()))
-    .mapOrElse(
-      async () => await Promise.resolve(333),
-      async (n) => await Promise.resolve(n * 2),
-    )
-    .andThen(async (n) => await Promise.resolve(Some(`${n} * 3`))),
-  Some("333 * 3"),
-);
+function doFetch(url: string): ResultPromise<Response, string> {
+  return resultFrom(
+    fetch(url)
+      .then(
+        Ok<Response, string>,
+        (err) => Err(err.toString()),
+      ),
+  );
+}
+
+function fetchJson(url: string) {
+  return doFetch(url)
+    .andThen(async (response) => {
+      if (response.ok) {
+        return Ok(await response.json());
+      } else return Err(`${response.status}: ${await response.text()}`);
+    });
+}
+
+fetchJson("https:///jsonplaceholder.typicode.com/todos/1")
+  .mapOrElse(
+    (err) => console.error("Failed", err),
+    (todo) => console.log("Success", todo),
+  );
 ```
 
 ## Option
@@ -171,6 +190,11 @@ for (const result of [divide(7, 0), divide(2.0, 3.0)]) {
 // "Cannot divide by zero"
 // "Result: 0.6666666666666666"
 ```
+
+#### A note on Ok()
+
+When a Result has a void Ok type (`Result<void,unknown>`), Ok must be called as
+`Ok(undefined)`
 
 Original implementation: <https://doc.rust-lang.org/core/result>
 
