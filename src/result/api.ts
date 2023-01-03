@@ -159,6 +159,14 @@ export interface ResultPromise<T, E> extends Promise<Result<T, E>> {
   map<U>(fn: (some: T) => U): ResultPromise<U, E>;
 
   /**
+   * Maps a Result<T, E> to Result<T, F> by applying a function to a contained Err value, leaving an Ok value untouched.
+   *
+   * This function can be used to pass through a successful result while handling an error.
+   */
+  mapErr<F>(fn: (err: E) => Promise<F>): ResultPromise<T, F>;
+  mapErr<F>(fn: (err: E) => F): ResultPromise<T, F>;
+
+  /**
    * Maps a {@linkcode Result<T, E>} to U by applying fallback function default to a contained {@linkcode Err} value,
    * or function f to a contained {@linkcode Ok} value.
    *

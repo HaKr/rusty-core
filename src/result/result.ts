@@ -209,7 +209,7 @@ export class PromisedResult<T, E> implements ResultPromise<T, E> {
   }
 
   mapErr<F>(fn: (err: E) => Promise<F>): ResultPromise<T, F>;
-  mapErr<F>(fn: (err: E) => F): Result<T, F>;
+  mapErr<F>(fn: (err: E) => F): ResultPromise<T, F>;
   mapErr<F>(
     fn: (err: E) => F | Promise<F>,
   ): Result<T, F> | ResultPromise<T, F> {

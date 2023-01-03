@@ -163,7 +163,7 @@ Takes the value out of the option, leaving a None in its place.
 
 ## Result
 
-Type `Result<T,E>` represents an resul value: every `Result` is either `Ok` and
+Type `Result<T,E>` represents an result value: every `Result` is either `Ok` and
 contains a value, or `Ok`, which holds an error value.
 
 ```typescript
