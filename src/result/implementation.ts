@@ -57,7 +57,9 @@ export class OkValue<T, E> implements UnwrapableResult<T, E> {
   ): Result<U, E> | PromisedResult<U, E> {
     const newVal = fn(this.okValue);
 
-    return newVal instanceof Promise
+    return newVal instanceof PromisedResult
+      ? newVal
+      : newVal instanceof Promise
       ? PromisedResult.from(newVal.then(Ok<U, E>))
       : Ok(newVal);
   }
