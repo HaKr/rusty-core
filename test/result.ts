@@ -79,3 +79,8 @@ Deno.test("for o of Result", () => {
   }
   assertEquals(n, 15);
 });
+
+Deno.test("result mapErr", () => {
+  assertEquals(Err(41).mapErr((err) => `${err + 2}`), Err("43"));
+  assertEquals(Ok<number, number>(41).mapErr((err) => `${err + 2}`), Ok(41));
+});

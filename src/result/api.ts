@@ -59,8 +59,8 @@ export interface Result<T, E> {
    *
    * This function can be used to pass through a successful result while handling an error.
    */
-  mapErr<F>(fn: (err: E) => Promise<Result<T, F>>): ResultPromise<T, F>;
-  mapErr<F>(fn: (err: E) => Result<T, F>): Result<T, F>;
+  mapErr<F>(fn: (err: E) => Promise<F>): ResultPromise<T, F>;
+  mapErr<F>(fn: (err: E) => F): Result<T, F>;
 
   /**
    * Maps a {@linkcode Result<T, E>} to U by applying fallback function default to a contained {@linkcode Err} value,
