@@ -7,7 +7,7 @@ import {
 } from "../result/api.ts";
 import { None, Option, optionFrom, type OptionPromise, Some } from "./api.ts";
 import { ChainableOption, UnwrapableOption } from "./chainable.ts";
-import { OptionValue } from "./option.ts";
+import { OptionValue, PromisedOption } from "./option.ts";
 
 const OptionType = {
   Some: Symbol(":some"),
@@ -99,11 +99,13 @@ export class SomeValue<T> implements UnwrapableOption<T> {
   ): Option<U>;
   mapOrElse<U>(
     _: () => U | Promise<U>,
-    fn: (some: T) => U | Promise<U>,
+    fn: (some: T) => U | Promise<U> | PromisedOption<U>,
   ): Option<U> | OptionPromise<U> {
     const newVal = fn(this.value);
 
-    return newVal instanceof Promise
+    return newVal instanceof PromisedOption
+      ? newVal
+      : newVal instanceof Promise
       ? optionFrom(newVal.then(Some))
       : Some(newVal);
   }

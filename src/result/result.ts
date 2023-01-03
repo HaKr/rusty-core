@@ -78,6 +78,10 @@ export class ResultValue<T, E> implements Result<T, E>, UnwrapableResult<T, E> {
   }
 
   mapOrElse<U>(
+    def: (err: E) => Result<U, E>,
+    fn: (ok: T) => ResultPromise<U, E>,
+  ): ResultPromise<U, E>;
+  mapOrElse<U>(
     def: (err: E) => Promise<U>,
     fn: (ok: T) => Promise<U>,
   ): Promise<U>;
@@ -220,6 +224,10 @@ export class PromisedResult<T, E> implements ResultPromise<T, E> {
     );
   }
 
+  mapOrElse<U>(
+    def: (err: E) => Result<U, E>,
+    fn: (ok: T) => ResultPromise<U, E>,
+  ): ResultPromise<U, E>;
   mapOrElse<U>(
     def: (err: E) => Promise<U>,
     fn: (ok: T) => Promise<U>,

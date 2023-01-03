@@ -69,6 +69,10 @@ export interface Result<T, E> {
    * This function can be used to unpack a successful result while handling an error.
    */
   mapOrElse<U>(
+    def: (err: E) => Result<U, E>,
+    fn: (ok: T) => ResultPromise<U, E>,
+  ): ResultPromise<U, E>;
+  mapOrElse<U>(
     def: (err: E) => Promise<U>,
     fn: (ok: T) => Promise<U>,
   ): Promise<U>;
@@ -172,6 +176,14 @@ export interface ResultPromise<T, E> extends Promise<Result<T, E>> {
    *
    * This function can be used to unpack a successful result while handling an error.
    */
+  mapOrElse<U>(
+    def: (err: E) => Result<U, E>,
+    fn: (ok: T) => ResultPromise<U, E>,
+  ): ResultPromise<U, E>;
+  mapOrElse<U>(
+    def: (err: E) => Promise<U>,
+    fn: (ok: T) => Promise<U>,
+  ): Promise<U>;
   mapOrElse<U>(
     def: (err: E) => Promise<U>,
     fn: (ok: T) => Promise<U>,
