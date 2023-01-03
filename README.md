@@ -2,10 +2,15 @@
 
 Option and Result as inspired by https://doc.rust-lang.org/stable/core
 
-### Usage (Deno)
+### Usage (Node.js)
+```json
+"dependencies": {
+	"rusty-core": "1.1.21"
+}
+```
 ```typescript
-import type  { Option, OptionPromise, Result, ResultPromise } from "https://deno.land/x/rusty_core@v1.1.18/mod.ts";
-import { Err, None, Ok, optionFrom, resultFrom, Some } from "https://deno.land/x/rusty_core@v1.1.18/mod.ts";
+import type  { Option, OptionPromise, Result, ResultPromise } from "rusty-core";
+import { Err, None, Ok, optionFrom, resultFrom, Some } from "rusty-core";
 ```
 
 ## Table of contents
