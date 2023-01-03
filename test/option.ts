@@ -110,9 +110,10 @@ Deno.test("option promises", async () => {
   assertEquals(
     await Some(12)
       .andThen(async (n) => await Promise.resolve(Some(n * 2)))
-      .andThen(async (n) => await Promise.resolve(Some(n * 3)))
-      .andThen(async (n) => await Promise.resolve(Some(n * 4))),
-    Some(12 * 2 * 3 * 4),
+      .andThen((n) => Promise.resolve(Some(n * 3)))
+      .andThen((n) => Promise.resolve(Some(n * 4)))
+      .andThen((n) => optionFrom(Promise.resolve(Some(n * 5)))),
+    Some(12 * 2 * 3 * 4 * 5),
   );
 
   assertEquals(

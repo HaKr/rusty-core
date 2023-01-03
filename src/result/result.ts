@@ -13,7 +13,7 @@ export function Err<T, E>(err: E): Result<T, E> {
 export function resultFrom<T, E>(
   from: Promise<Result<T, E>>,
 ): ResultPromise<T, E> {
-  return PromisedResult.from(from);
+  return from instanceof PromisedResult ? from : PromisedResult.from(from);
 }
 
 export interface UnwrapableResult<T, E> extends Result<T, E> {

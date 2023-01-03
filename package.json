@@ -1,6 +1,6 @@
 {
   "name": "rusty-core",
-  "version": "1.1.8",
+  "version": "1.1.10",
   "description": "Option and Result as inspired by https://doc.rust-lang.org/stable/core",
   "main": "lib/index.js",
   "directories": {
@@ -17,8 +17,7 @@
     "Rust",
     "Result",
     "Option",
-    "Pointer",
-    "safety"
+    "Pointer safety"
   ],
   "author": "Harry de Kroon",
   "license": "GPL-3.0-or-later",

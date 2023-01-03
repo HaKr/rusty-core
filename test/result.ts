@@ -2,9 +2,9 @@ import {
   assert,
   assertEquals,
 } from "https://deno.land/std@0.170.0/testing/asserts.ts";
+import { None, Option, Some } from "../src/option/api.ts";
 
-import { None, type Option, Some } from "../src/option/mod.ts";
-import { Err, Ok, type Result } from "../src/result/api.ts";
+import { Err, Ok, type Result, resultFrom } from "../src/result/api.ts";
 
 Deno.test("result predicates", () => {
   assert(Ok(42).isOk());
@@ -39,6 +39,26 @@ Deno.test("result promises", async () => {
   );
 });
 
+Deno.test("result promise chaining", async () => {
+  assertEquals(
+    await Ok(12)
+      .andThen(async (n) => await resultFrom(Promise.resolve(Ok(n * 4 - 6))))
+      .map((nr) => `${nr}`)
+      .map(async (s) => await Promise.resolve(`[${s}]`)),
+    Ok("[42]"),
+  );
+  function modify(n: number) {
+    return resultFrom(Promise.resolve(Ok(n + 1)));
+  }
+  assertEquals(
+    await Ok(12)
+      .andThen(modify)
+      .map((nr) => `${nr}`)
+      .map(async (s) => await Promise.resolve(`[${s}]`)),
+    Ok("[13]"),
+  );
+});
+
 Deno.test("result mapOrElse is different", async () => {
   assertEquals(
     await Ok(12)
@@ -46,4 +66,16 @@ Deno.test("result mapOrElse is different", async () => {
       .mapOrElse(() => Err<string, string>("nope"), (nr) => Ok(`[${nr}]`)),
     Ok("[42]"),
   );
+});
+
+Deno.test("for o of Result", () => {
+  let n = 0;
+  for (const opt of Err<number, string>("nope")) {
+    n += opt;
+  }
+  assertEquals(n, 0);
+  for (const opt of Ok(15)) {
+    n += opt;
+  }
+  assertEquals(n, 15);
 });
