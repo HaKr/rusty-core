@@ -169,7 +169,11 @@ export class ErrValue<T, E> implements UnwrapableResult<T, E> {
   ): Result<T, F> | ResultPromise<T, F> {
     const alt = fn(this.errValue);
 
-    return (alt instanceof Promise) ? new PromisedResult(alt) : alt;
+    return alt instanceof PromisedResult
+      ? alt
+      : (alt instanceof Promise)
+      ? new PromisedResult(alt)
+      : alt;
   }
 
   mapOrElse<U>(

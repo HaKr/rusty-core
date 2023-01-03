@@ -9,7 +9,7 @@ const OptionType = {
   None: Symbol(":none"),
 };
 
-export class SomeValue<T> implements ChainableOption<T>, UnwrapableOption<T> {
+export class SomeValue<T> implements UnwrapableOption<T> {
   value: T;
   constructor(value: T) {
     this.value = value;
@@ -27,10 +27,11 @@ export class SomeValue<T> implements ChainableOption<T>, UnwrapableOption<T> {
     return optb;
   }
 
+  andThen<U>(fn: (some: T) => OptionPromise<U>): OptionPromise<U>;
   andThen<U>(fn: (some: T) => Promise<Option<U>>): OptionPromise<U>;
   andThen<U>(fn: (some: T) => Option<U>): Option<U>;
   andThen<U>(
-    fn: (some: T) => Option<U> | Promise<Option<U>>,
+    fn: (some: T) => Option<U> | OptionPromise<U> | Promise<Option<U>>,
   ): OptionPromise<U> | Option<U> {
     const alt = fn(this.value);
     return alt instanceof Promise ? optionFrom(alt) : alt;
@@ -191,6 +192,7 @@ export class NoneValue<T> implements ChainableOption<T>, UnwrapableOption<T> {
     return alt instanceof Promise ? optionFrom(alt.then(Some)) : Some(alt);
   }
 
+  andThen<U>(fn: (some: T) => OptionPromise<U>): OptionPromise<U>;
   andThen<U>(fn: (some: T) => Promise<Option<U>>): OptionPromise<U>;
   andThen<U>(fn: (some: T) => Option<U>): Option<U>;
   andThen<U>(

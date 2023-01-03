@@ -16,7 +16,9 @@ export function optionFrom<T>(from: T): Option<T>;
 export function optionFrom<T>(
   from: undefined | null | number | unknown | Promise<Option<T>>,
 ): OptionPromise<T> | Option<T> {
-  return from instanceof Promise
+  return from instanceof PromisedOption
+    ? from
+    : from instanceof Promise
     ? PromisedOption.create(from)
     : from === undefined || (typeof from == "object" && from == null) ||
         (typeof from == "number" && (Number.isNaN(from) || from == Infinity))
@@ -91,6 +93,7 @@ export interface OptionPromise<T> extends Promise<Option<T>> {
    *
    * Some languages call this operation flatmap.
    */
+  andThen<U>(fn: (some: T) => OptionPromise<U>): OptionPromise<U>;
   andThen<U>(fn: (some: T) => Promise<Option<U>>): OptionPromise<U>;
   andThen<U>(fn: (some: T) => Option<U>): OptionPromise<U>;
 

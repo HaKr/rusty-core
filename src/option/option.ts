@@ -212,6 +212,7 @@ export class PromisedOption<T> implements OptionPromise<T> {
     );
   }
 
+  andThen<U>(fn: (some: T) => OptionPromise<U>): OptionPromise<U>;
   andThen<U>(fn: (some: T) => Promise<Option<U>>): OptionPromise<U>;
   andThen<U>(fn: (some: T) => Option<U>): OptionPromise<U>;
   andThen<U>(

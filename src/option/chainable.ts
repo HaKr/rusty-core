@@ -17,6 +17,7 @@ export interface ChainableOption<T> {
    *
    * Some languages call this operation flatmap.
    */
+  andThen<U>(fn: (some: T) => OptionPromise<U>): OptionPromise<U>;
   andThen<U>(fn: (some: T) => Promise<Option<U>>): OptionPromise<U>;
   andThen<U>(fn: (some: T) => Option<U>): Option<U>;
 
