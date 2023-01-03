@@ -1,6 +1,13 @@
 import { None, type Option, Some } from "../option/mod";
 import { Result, ResultPromise } from "./api";
-import { Ok, PromisedResult, ResultValue, UnwrapableResult } from "./result";
+import {
+  Err,
+  Ok,
+  PromisedResult,
+  resultFrom,
+  ResultValue,
+  UnwrapableResult,
+} from "./result";
 
 const ResultType = {
   Ok: Symbol(":ok"),
@@ -64,14 +71,18 @@ export class OkValue<T, E> implements UnwrapableResult<T, E> {
       : Ok(newVal);
   }
 
-  mapErr<F>(fn: (err: E) => Promise<Result<T, F>>): ResultPromise<T, F>;
-  mapErr<F>(fn: (err: E) => Result<T, F>): Result<T, F>;
+  mapErr<F>(fn: (err: E) => Promise<F>): ResultPromise<T, F>;
+  mapErr<F>(fn: (err: E) => F): Result<T, F>;
   mapErr<F>(
     _: (err: E) => Result<T, F> | Promise<Result<T, F>>,
   ): Result<T, F> | ResultPromise<T, F> {
     return Ok(this.okValue);
   }
 
+  mapOrElse<U>(
+    def: (err: E) => Result<U, E>,
+    fn: (ok: T) => ResultPromise<U, E>,
+  ): ResultPromise<U, E>;
   mapOrElse<U>(
     def: (err: E) => Promise<U>,
     fn: (ok: T) => Promise<U>,
@@ -164,18 +175,16 @@ export class ErrValue<T, E> implements UnwrapableResult<T, E> {
     return ResultValue.from(this as unknown as ErrValue<U, E>);
   }
 
-  mapErr<F>(fn: (err: E) => Promise<Result<T, F>>): ResultPromise<T, F>;
-  mapErr<F>(fn: (err: E) => Result<T, F>): Result<T, F>;
+  mapErr<F>(fn: (err: E) => Promise<F>): ResultPromise<T, F>;
+  mapErr<F>(fn: (err: E) => F): Result<T, F>;
   mapErr<F>(
-    fn: (err: E) => Result<T, F> | Promise<Result<T, F>>,
+    fn: (err: E) => F | Promise<F>,
   ): Result<T, F> | ResultPromise<T, F> {
     const alt = fn(this.errValue);
 
-    return alt instanceof PromisedResult
-      ? alt
-      : (alt instanceof Promise)
-      ? new PromisedResult(alt)
-      : alt;
+    return alt instanceof Promise
+      ? resultFrom(alt.then((err) => Err(err)))
+      : Err(alt);
   }
 
   mapOrElse<U>(

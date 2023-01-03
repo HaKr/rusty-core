@@ -2,6 +2,12 @@
 
 Option and Result as inspired by https://doc.rust-lang.org/stable/core
 
+### Usage (Deno)
+```typescript
+import type  { Option, OptionPromise, Result, ResultPromise } from "https://deno.land/x/rusty_core@v1.1.18/mod.ts";
+import { Err, None, Ok, optionFrom, resultFrom, Some } from "https://deno.land/x/rusty_core@v1.1.18/mod.ts";
+```
+
 ## Table of contents
 
 - [Introduction](#introduction)
@@ -163,7 +169,7 @@ Takes the value out of the option, leaving a None in its place.
 
 ## Result
 
-Type `Result<T,E>` represents an resul value: every `Result` is either `Ok` and
+Type `Result<T,E>` represents an result value: every `Result` is either `Ok` and
 contains a value, or `Ok`, which holds an error value.
 
 ```typescript
