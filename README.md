@@ -3,13 +3,15 @@
 Option and Result as inspired by https://doc.rust-lang.org/stable/core
 
 ### Usage (Node.js)
+
 ```json
 "dependencies": {
-	"rusty-core": "1.1.21"
+	"rusty-core": "1.1.23"
 }
 ```
+
 ```typescript
-import type  { Option, OptionPromise, Result, ResultPromise } from "rusty-core";
+import type { Option, OptionPromise, Result, ResultPromise } from "rusty-core";
 import { Err, None, Ok, optionFrom, resultFrom, Some } from "rusty-core";
 ```
 
@@ -141,6 +143,11 @@ Returns the contained value or `optb`.
 
 Maps an `Option<T>` to `Option<U>` by applying a function to a contained value.
 
+### `mapOrElse(def: () => U, fn: (val: T) => U) => U`
+
+Computes a default function result (if `None`), or applies a different function
+to the contained value (if `Some`).
+
 ### `andThen(fn: (val: T) => Option<U>) => Option<U>`
 
 Returns `None` if the option is `None`, otherwise calls `fn` with the wrapped
@@ -225,3 +232,10 @@ Returns the contained value when it is an Ok, otherwise `res`.
 
 Maps an `Result<T,E>` to `Result<U,E>` by applying a function to a contained Ok
 value, otherwise the `Err`.
+
+### `mapOrElse(fn: (val: T) => U) => U`
+
+Maps a `Result<T, E>` to `U` by applying fallback function default to a
+contained `Err` value, or function `fn` to a contained `Ok` value.
+
+This function can be used to unpack a successful result while handling an error.

@@ -45,25 +45,28 @@ export interface ChainableOption<T> {
   map<U>(fn: (some: T) => U): Option<U>;
 
   /**
-   * Computes a default function result (if none), or applies a different function to the contained value (if any).
+   * Computes a default function result (if none), or applies a different function to the contained value (if some).
    */
   mapOrElse<U>(
-    def: () => Promise<U>,
-    fn: (some: T) => Promise<U>,
+    def: () => OptionPromise<U>,
+    fn: (some: T) => OptionPromise<U>,
   ): OptionPromise<U>;
   mapOrElse<U>(
     def: () => Promise<U>,
+    fn: (some: T) => Promise<U>,
+  ): Promise<U>;
+  mapOrElse<U>(
+    def: () => Promise<U>,
     fn: (some: T) => U,
-  ): OptionPromise<U> | Option<U>;
+  ): Promise<U> | U;
   mapOrElse<U>(
     def: () => U,
     fn: (some: T) => Promise<U>,
-  ): OptionPromise<U> | Option<U>;
-
+  ): Promise<U> | U;
   mapOrElse<U>(
     def: () => U,
     fn: (some: T) => U,
-  ): Option<U>;
+  ): U;
 
   /**
    * Transforms the {@linkcode Option<T>} into a {@linkcode Result<T, E>},

@@ -150,8 +150,8 @@ it("option promises", async () => {
         async () => await Promise.resolve(333),
         async (n) => await Promise.resolve(n * 2),
       )
-      .andThen(async (n) => await Promise.resolve(Some(`${n} * 3`))),
-    Some("333 * 3"),
+      .then(async (n) => await Promise.resolve(`${n} * 3`)),
+    "333 * 3",
   );
 });
 
