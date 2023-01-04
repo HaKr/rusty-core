@@ -1,4 +1,4 @@
-import { type Option } from "../option/mod.ts";
+import { type Option, OptionPromise } from "../option/mod.ts";
 import { ErrValue, OkValue } from "./implementation.ts";
 import { PromisedResult, ResultValue } from "./result.ts";
 
@@ -6,8 +6,16 @@ export function Ok<T, E>(value: T): Result<T, E> {
   return ResultValue.from(new OkValue<T, E>(value));
 }
 
+export function OkPromise<T, E>(value: T): ResultPromise<T, E> {
+  return resultFrom(Promise.resolve(Ok(value)));
+}
+
 export function Err<T, E>(err: E): Result<T, E> {
   return ResultValue.from(new ErrValue<T, E>(err));
+}
+
+export function ErrPromise<T, E>(err: E): ResultPromise<T, E> {
+  return resultFrom(Promise.resolve(Err(err)));
 }
 
 export function resultFrom<T, E>(
@@ -68,10 +76,18 @@ export interface Result<T, E> {
    *
    * This function can be used to unpack a successful result while handling an error.
    */
-  mapOrElse<U>(
-    def: (err: E) => Result<U, E>,
-    fn: (ok: T) => ResultPromise<U, E>,
-  ): ResultPromise<U, E>;
+  mapOrElse<U, F>(
+    def: (err: E) => ResultPromise<U, F>,
+    fn: (ok: T) => ResultPromise<U, F>,
+  ): ResultPromise<U, F>;
+  mapOrElse<U, F>(
+    def: (err: E) => ResultPromise<U, F>,
+    fn: (ok: T) => Result<U, F>,
+  ): never;
+  mapOrElse<U, F>(
+    def: (err: E) => Result<U, F>,
+    fn: (ok: T) => ResultPromise<U, F>,
+  ): never;
   mapOrElse<U>(
     def: (err: E) => Promise<U>,
     fn: (ok: T) => Promise<U>,
@@ -148,7 +164,7 @@ export interface ResultPromise<T, E> extends Promise<Result<T, E>> {
    *
    * Converts self into an {@linkcode Option<E>}, consuming self, and discarding the success value, if any.
    */
-  // err(): Option<E>;
+  err(): OptionPromise<E>;
 
   isOk(): Promise<boolean>;
   isErr(): Promise<boolean>;
@@ -175,11 +191,20 @@ export interface ResultPromise<T, E> extends Promise<Result<T, E>> {
    * or function f to a contained {@linkcode Ok} value.
    *
    * This function can be used to unpack a successful result while handling an error.
+   *
+   * @returns `never` when any of the callback would return an Option or a Result,
+   *          indication you probably should use {@linkcode resultOrElse<U, F>} or {@linkcode optionOrElse<U>}
+   * @see {@linkcode resultOrElse<U, F>} or {@linkcode optionOrElse<U>} for methods that are better
+   *      suited for asynchronous mapping to another result or option
    */
-  mapOrElse<U>(
-    def: (err: E) => Result<U, E>,
-    fn: (ok: T) => ResultPromise<U, E>,
-  ): ResultPromise<U, E>;
+  mapOrElse<U, F>(
+    def: (err: E) => Result<U, F> | ResultPromise<U, F>,
+    fn: (ok: T) => Result<U, F> | ResultPromise<U, F>,
+  ): never;
+  mapOrElse<U, F>(
+    def: () => Option<U> | OptionPromise<U>,
+    fn: (ok: T) => Option<U> | OptionPromise<U>,
+  ): never;
   mapOrElse<U>(
     def: (err: E) => Promise<U>,
     fn: (ok: T) => Promise<U>,
@@ -202,11 +227,47 @@ export interface ResultPromise<T, E> extends Promise<Result<T, E>> {
   ): Promise<U>;
 
   /**
+   * Maps a {@linkcode Result<T, E>} to {@linkcode Result<U,F>} by applying fallback function default to a contained {@linkcode Err} value,
+   * or function fn to a contained {@linkcode Ok} value.
+   *
+   * This function can be used to chain result promises.
+   *
+   * @see {@linkcode mapOrElse<U>} for a method that is better
+   *      suited for mapping to another return types than result or option
+   */
+  resultOrElse<U, F>(
+    def: (err: E) => Result<U, F>,
+    fn: (ok: T) => Result<U, F>,
+  ): ResultPromise<U, F>;
+  resultOrElse<U, F>(
+    def: (err: E) => ResultPromise<U, F>,
+    fn: (ok: T) => ResultPromise<U, F>,
+  ): ResultPromise<U, F>;
+
+  /**
+   * Maps a {@linkcode Result<T, E>} to {@linkcode Option<U>} by applying fallback function default to a contained {@linkcode Err} value,
+   * or function fn to a contained {@linkcode Ok} value.
+   *
+   * This function can be used to chain result and option promises.
+   *
+   * @see {@linkcode mapOrElse<U>} for a method that is better
+   *      suited for mapping to another return types than result or option
+   */
+  optionOrElse<U>(
+    def: (err: E) => Option<U>,
+    fn: (ok: T) => Option<U>,
+  ): OptionPromise<U>;
+  optionOrElse<U, F>(
+    def: (err: E) => OptionPromise<U>,
+    fn: (ok: T) => OptionPromise<U>,
+  ): OptionPromise<U>;
+
+  /**
    * Converts from {@linkcode Result<T, E>} to {@linkcode Option<T>}.
    *
    * Converts self into an {@linkcode Option<T>}, consuming self, and discarding the error, if any.
    */
-  // ok(): Option<T>;
+  ok(): OptionPromise<T>;
 
   /**
    * Returns res if the result is Err, otherwise returns the Ok value of self.

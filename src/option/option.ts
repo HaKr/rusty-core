@@ -2,7 +2,7 @@
 
 import { Result, ResultPromise } from "../result/api.ts";
 import { resultFrom } from "../result/result.ts";
-import type { Option, OptionPromise } from "./api.ts";
+import { Option, optionFrom, OptionPromise } from "./api.ts";
 import { ChainableOption } from "./chainable.ts";
 import { NoneValue, SomeValue } from "./implementation.ts";
 
@@ -262,6 +262,14 @@ export class PromisedOption<T> implements OptionPromise<T> {
     );
   }
 
+  mapOrElse<U, F>(
+    def: () => Result<U, F> | ResultPromise<U, F>,
+    fn: (ok: T) => Result<U, F> | ResultPromise<U, F>,
+  ): never;
+  mapOrElse<U, F>(
+    def: () => Option<U> | OptionPromise<U>,
+    fn: (ok: T) => Option<U> | OptionPromise<U>,
+  ): never;
   mapOrElse<U>(
     def: () => OptionPromise<U>,
     fn: (some: T) => OptionPromise<U>,
@@ -292,6 +300,38 @@ export class PromisedOption<T> implements OptionPromise<T> {
         fn as (some: T) => Promise<U>,
       )
     ) as Promise<U>;
+  }
+
+  optionOrElse<U>(
+    def: () => Option<U>,
+    fn: (ok: T) => Option<U>,
+  ): OptionPromise<U>;
+  optionOrElse<U>(
+    def: () => OptionPromise<U>,
+    fn: (ok: T) => OptionPromise<U>,
+  ): OptionPromise<U>;
+  optionOrElse<U>(
+    def: () => Option<U> | OptionPromise<U>,
+    fn: (ok: T) => Option<U> | OptionPromise<U>,
+  ): OptionPromise<U> {
+    return optionFrom(
+      this.promise.then((result) => result.mapOrElse(def, fn)),
+    );
+  }
+
+  resultOrElse<U, F>(
+    def: () => Result<U, F>,
+    fn: (ok: T) => Result<U, F>,
+  ): ResultPromise<U, F>;
+  resultOrElse<U, F>(
+    def: () => ResultPromise<U, F>,
+    fn: (ok: T) => ResultPromise<U, F>,
+  ): ResultPromise<U, F>;
+  resultOrElse<U, F>(
+    def: () => Result<U, F> | ResultPromise<U, F>,
+    fn: (ok: T) => Result<U, F> | ResultPromise<U, F>,
+  ): ResultPromise<U, F> {
+    return resultFrom(this.promise.then((result) => result.mapOrElse(def, fn)));
   }
 
   okOr<E>(err: E): ResultPromise<T, E> {

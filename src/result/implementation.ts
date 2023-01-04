@@ -77,6 +77,18 @@ export class OkValue<T, E> implements UnwrapableResult<T, E> {
     return Ok(this.okValue);
   }
 
+  mapOrElse<U, F>(
+    def: (err: E) => ResultPromise<U, F>,
+    fn: (ok: T) => ResultPromise<U, F>,
+  ): ResultPromise<U, F>;
+  mapOrElse<U, F>(
+    def: (err: E) => ResultPromise<U, F>,
+    fn: (ok: T) => Result<U, F>,
+  ): never;
+  mapOrElse<U, F>(
+    def: (err: E) => Result<U, F>,
+    fn: (ok: T) => ResultPromise<U, F>,
+  ): never;
   mapOrElse<U>(
     def: (err: E) => Result<U, E>,
     fn: (ok: T) => ResultPromise<U, E>,
@@ -185,6 +197,18 @@ export class ErrValue<T, E> implements UnwrapableResult<T, E> {
       : Err(alt);
   }
 
+  mapOrElse<U, F>(
+    def: (err: E) => ResultPromise<U, F>,
+    fn: (ok: T) => ResultPromise<U, F>,
+  ): ResultPromise<U, F>;
+  mapOrElse<U, F>(
+    def: (err: E) => ResultPromise<U, F>,
+    fn: (ok: T) => Result<U, F>,
+  ): never;
+  mapOrElse<U, F>(
+    def: (err: E) => Result<U, F>,
+    fn: (ok: T) => ResultPromise<U, F>,
+  ): never;
   mapOrElse<U>(
     def: (err: E) => Promise<U>,
     fn: (ok: T) => Promise<U>,
