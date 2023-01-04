@@ -84,26 +84,29 @@ export class OptionValue<T> implements Option<T>, UnwrapableOption<T> {
   }
 
   mapOrElse<U>(
-    def: () => Promise<U>,
-    fn: (some: T) => Promise<U>,
+    def: () => OptionPromise<U>,
+    fn: (some: T) => OptionPromise<U>,
   ): OptionPromise<U>;
   mapOrElse<U>(
     def: () => Promise<U>,
+    fn: (some: T) => Promise<U>,
+  ): Promise<U>;
+  mapOrElse<U>(
+    def: () => Promise<U>,
     fn: (some: T) => U,
-  ): OptionPromise<U> | Option<U>;
+  ): Promise<U> | U;
   mapOrElse<U>(
     def: () => U,
     fn: (some: T) => Promise<U>,
-  ): OptionPromise<U> | Option<U>;
-
+  ): Promise<U> | U;
   mapOrElse<U>(
     def: () => U,
     fn: (some: T) => U,
-  ): Option<U>;
+  ): U;
   mapOrElse<U>(
     def: () => U | Promise<U>,
     fn: (some: T) => U | Promise<U>,
-  ): Option<U> | OptionPromise<U> {
+  ): U | Promise<U> | OptionPromise<U> {
     return this.option.mapOrElse(def as () => U, fn as (some: T) => U);
   }
 
@@ -260,21 +263,35 @@ export class PromisedOption<T> implements OptionPromise<T> {
   }
 
   mapOrElse<U>(
+    def: () => OptionPromise<U>,
+    fn: (some: T) => OptionPromise<U>,
+  ): OptionPromise<U>;
+  mapOrElse<U>(
     def: () => Promise<U>,
     fn: (some: T) => Promise<U>,
-  ): OptionPromise<U>;
-  mapOrElse<U>(def: () => Promise<U>, fn: (some: T) => U): OptionPromise<U>;
-  mapOrElse<U>(def: () => U, fn: (some: T) => Promise<U>): OptionPromise<U>;
-  mapOrElse<U>(def: () => U, fn: (some: T) => U): OptionPromise<U>;
+  ): Promise<U>;
+  mapOrElse<U>(
+    def: () => Promise<U>,
+    fn: (some: T) => U,
+  ): Promise<U>;
+  mapOrElse<U>(
+    def: () => U,
+    fn: (some: T) => Promise<U>,
+  ): Promise<U>;
+  mapOrElse<U>(
+    def: () => U,
+    fn: (some: T) => U,
+  ): Promise<U>;
   mapOrElse<U>(
     def: () => U | Promise<U>,
     fn: (some: T) => U | Promise<U>,
-  ): OptionPromise<U> {
-    return PromisedOption.create(
-      this.promise.then((option) =>
-        option.mapOrElse(def as () => U, fn as (some: T) => U)
-      ),
-    );
+  ): Promise<U> | OptionPromise<U> {
+    return this.promise.then((option) =>
+      option.mapOrElse(
+        def as () => Promise<U>,
+        fn as (some: T) => Promise<U>,
+      )
+    ) as Promise<U>;
   }
 
   okOr<E>(err: E): ResultPromise<T, E> {

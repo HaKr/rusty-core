@@ -7,7 +7,7 @@ import {
 } from "../result/api.ts";
 import { None, Option, optionFrom, type OptionPromise, Some } from "./api.ts";
 import { ChainableOption, UnwrapableOption } from "./chainable.ts";
-import { OptionValue, PromisedOption } from "./option.ts";
+import { OptionValue } from "./option.ts";
 
 const OptionType = {
   Some: Symbol(":some"),
@@ -81,33 +81,30 @@ export class SomeValue<T> implements UnwrapableOption<T> {
   }
 
   mapOrElse<U>(
-    def: () => Promise<U>,
-    fn: (some: T) => Promise<U>,
+    def: () => OptionPromise<U>,
+    fn: (some: T) => OptionPromise<U>,
   ): OptionPromise<U>;
   mapOrElse<U>(
     def: () => Promise<U>,
+    fn: (some: T) => Promise<U>,
+  ): Promise<U>;
+  mapOrElse<U>(
+    def: () => Promise<U>,
     fn: (some: T) => U,
-  ): OptionPromise<U> | Option<U>;
+  ): Promise<U> | U;
   mapOrElse<U>(
     def: () => U,
     fn: (some: T) => Promise<U>,
-  ): OptionPromise<U> | Option<U>;
-
+  ): Promise<U> | U;
   mapOrElse<U>(
     def: () => U,
     fn: (some: T) => U,
-  ): Option<U>;
+  ): U;
   mapOrElse<U>(
     _: () => U | Promise<U>,
-    fn: (some: T) => U | Promise<U> | PromisedOption<U>,
-  ): Option<U> | OptionPromise<U> {
-    const newVal = fn(this.value);
-
-    return newVal instanceof PromisedOption
-      ? newVal
-      : newVal instanceof Promise
-      ? optionFrom(newVal.then(Some))
-      : Some(newVal);
+    fn: (some: T) => U | Promise<U> | OptionPromise<U>,
+  ): U | Promise<U> | OptionPromise<U> {
+    return fn(this.value);
   }
 
   okOr<E>(_: E): Result<T, E> {
@@ -175,28 +172,30 @@ export class NoneValue<T> implements ChainableOption<T>, UnwrapableOption<T> {
   }
 
   mapOrElse<U>(
-    def: () => Promise<U>,
-    fn: (some: T) => Promise<U>,
+    def: () => OptionPromise<U>,
+    fn: (some: T) => OptionPromise<U>,
   ): OptionPromise<U>;
   mapOrElse<U>(
     def: () => Promise<U>,
+    fn: (some: T) => Promise<U>,
+  ): Promise<U>;
+  mapOrElse<U>(
+    def: () => Promise<U>,
     fn: (some: T) => U,
-  ): OptionPromise<U> | Option<U>;
+  ): Promise<U> | U;
   mapOrElse<U>(
     def: () => U,
     fn: (some: T) => Promise<U>,
-  ): OptionPromise<U> | Option<U>;
-
+  ): Promise<U> | U;
   mapOrElse<U>(
     def: () => U,
     fn: (some: T) => U,
-  ): Option<U>;
+  ): U;
   mapOrElse<U>(
     def: () => U | Promise<U>,
-    _: (some: T) => U | Promise<U>,
-  ): Option<U> | OptionPromise<U> {
-    const alt = def();
-    return alt instanceof Promise ? optionFrom(alt.then(Some)) : Some(alt);
+    _: (some: T) => U | Promise<U> | OptionPromise<U>,
+  ): U | Promise<U> | OptionPromise<U> {
+    return def();
   }
 
   andThen<U>(fn: (some: T) => OptionPromise<U>): OptionPromise<U>;

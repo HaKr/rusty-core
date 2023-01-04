@@ -1,6 +1,6 @@
 {
   "name": "rusty-core",
-  "version": "1.1.20",
+  "version": "1.1.22",
   "description": "Option and Result as inspired by https://doc.rust-lang.org/stable/core",
   "main": "lib/index.js",
   "directories": {
