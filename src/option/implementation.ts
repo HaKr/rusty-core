@@ -7,7 +7,7 @@ import {
 } from "../result/api";
 import { None, Option, optionFrom, type OptionPromise, Some } from "./api";
 import { ChainableOption, UnwrapableOption } from "./chainable";
-import { OptionValue, PromisedOption } from "./option";
+import { OptionValue } from "./option";
 
 const OptionType = {
   Some: Symbol(":some"),

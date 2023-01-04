@@ -63,10 +63,7 @@ export interface ChainableOption<T> {
     def: () => U,
     fn: (some: T) => Promise<U>,
   ): Promise<U> | U;
-  mapOrElse<U>(
-    def: () => U,
-    fn: (some: T) => U,
-  ): U;
+  mapOrElse<U>(def: () => U, fn: (some: T) => U): U;
 
   /**
    * Transforms the {@linkcode Option<T>} into a {@linkcode Result<T, E>},

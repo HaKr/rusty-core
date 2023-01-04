@@ -1,4 +1,4 @@
-import { type ResultPromise } from "../result/api";
+import { Result, type ResultPromise } from "../result/api";
 import { type ChainableOption } from "./chainable";
 import { NoneValue, SomeValue } from "./implementation";
 import { OptionValue, PromisedOption } from "./option";
@@ -7,8 +7,16 @@ export function Some<T>(value: T): Option<T> {
   return OptionValue.from(new SomeValue<T>(value));
 }
 
+export function SomePromise<T>(value: T): OptionPromise<T> {
+  return optionFrom(Promise.resolve(Some(value)));
+}
+
 export function None<T>(): Option<T> {
   return OptionValue.from(new NoneValue<T>());
+}
+
+export function NonePromise<T>(): OptionPromise<T> {
+  return optionFrom(Promise.resolve(None()));
 }
 
 export function optionFrom<T>(from: Promise<Option<T>>): OptionPromise<T>;
@@ -122,7 +130,21 @@ export interface OptionPromise<T> extends Promise<Option<T>> {
 
   /**
    * Computes a default function result (if none), or applies a different function to the contained value (if any).
+   *
+   * @returns `never` when any of the callback would return an Option or a Result,
+   *          indication you probably should use {@linkcode resultOrElse<U, F>} or {@linkcode optionOrElse<U>}
+   *
+   * @see {@linkcode resultOrElse<U, F>} or {@linkcode optionOrElse<U>} for methods that are better
+   *      suited for asynchronous mapping to another result or option
    */
+  mapOrElse<U, F>(
+    def: () => Result<U, F> | ResultPromise<U, F>,
+    fn: (ok: T) => Result<U, F> | ResultPromise<U, F>,
+  ): never;
+  mapOrElse<U>(
+    def: () => Option<U> | OptionPromise<U>,
+    fn: (ok: T) => Option<U> | OptionPromise<U>,
+  ): never;
   mapOrElse<U>(
     def: () => OptionPromise<U>,
     fn: (some: T) => OptionPromise<U>,
@@ -143,6 +165,42 @@ export interface OptionPromise<T> extends Promise<Option<T>> {
     def: () => U,
     fn: (some: T) => U,
   ): Promise<U>;
+
+  /**
+   * Maps a {@linkcode Option<T>} to {@linkcode Option<U>} by applying fallback function default ,
+   * or function fn to a contained {@linkcode Some} value.
+   *
+   * This function can be used to chain result and option promises.
+   *
+   * @see {@linkcode mapOrElse<U>} for a method that is better
+   *      suited for mapping to another return types than result or option
+   */
+  optionOrElse<U>(
+    def: () => Option<U>,
+    fn: (ok: T) => Option<U>,
+  ): OptionPromise<U>;
+  optionOrElse<U>(
+    def: () => OptionPromise<U>,
+    fn: (ok: T) => OptionPromise<U>,
+  ): OptionPromise<U>;
+
+  /**
+   * Maps an {@linkcode Option<T>} to {@linkcode Result<U,E>} by applying fallback function default,
+   * or function fn to a contained {@linkcode Some} value.
+   *
+   * This function can be used to chain result and option promises.
+   *
+   * @see {@linkcode mapOrElse<U>} for a method that is better
+   *      suited for mapping to another return types than result or option
+   */
+  resultOrElse<U, F>(
+    def: () => Result<U, F>,
+    fn: (ok: T) => Result<U, F>,
+  ): ResultPromise<U, F>;
+  resultOrElse<U, F>(
+    def: () => ResultPromise<U, F>,
+    fn: (ok: T) => ResultPromise<U, F>,
+  ): ResultPromise<U, F>;
 
   /**
    * Transforms the {@linkcode Option<T>} into a {@linkcode Result<T, E>},
