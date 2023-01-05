@@ -206,22 +206,6 @@ export interface ResultPromise<T, E> extends Promise<Result<T, E>> {
     fn: (ok: T) => Option<U> | OptionPromise<U>,
   ): never;
   mapOrElse<U>(
-    def: (err: E) => Promise<U>,
-    fn: (ok: T) => Promise<U>,
-  ): Promise<U>;
-  mapOrElse<U>(
-    def: (err: E) => Promise<U>,
-    fn: (ok: T) => Promise<U>,
-  ): Promise<U>;
-  mapOrElse<U>(
-    def: (err: E) => Promise<U>,
-    fn: (ok: T) => U,
-  ): Promise<U>;
-  mapOrElse<U>(
-    def: (err: E) => U,
-    fn: (ok: T) => Promise<U>,
-  ): Promise<U>;
-  mapOrElse<U>(
     def: (err: E) => U,
     fn: (ok: T) => U,
   ): Promise<U>;

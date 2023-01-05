@@ -47,22 +47,6 @@ export interface ChainableOption<T> {
   /**
    * Computes a default function result (if none), or applies a different function to the contained value (if any).
    */
-  mapOrElse<U>(
-    def: () => OptionPromise<U>,
-    fn: (some: T) => OptionPromise<U>,
-  ): OptionPromise<U>;
-  mapOrElse<U>(
-    def: () => Promise<U>,
-    fn: (some: T) => Promise<U>,
-  ): Promise<U>;
-  mapOrElse<U>(
-    def: () => Promise<U>,
-    fn: (some: T) => U,
-  ): Promise<U> | U;
-  mapOrElse<U>(
-    def: () => U,
-    fn: (some: T) => Promise<U>,
-  ): Promise<U> | U;
   mapOrElse<U>(def: () => U, fn: (some: T) => U): U;
 
   /**

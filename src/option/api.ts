@@ -3,6 +3,16 @@ import { type ChainableOption } from "./chainable.ts";
 import { NoneValue, SomeValue } from "./implementation.ts";
 import { OptionValue, PromisedOption } from "./option.ts";
 
+type UseOptionPromiseInstead =
+  "Returning a promise here is not advisable, use optionOrElse instead";
+export type OptionLike<T = unknown> = Option<T> | OptionPromise<T>;
+export type AnythingButOption<T> = T extends OptionLike<infer X>
+  ? UseOptionPromiseInstead
+  : T extends Promise<infer U> ? Promise<U>
+  : Promise<T>;
+export type OptionOrElse<T> = T extends OptionLike<infer U> ? OptionPromise<U>
+  : never;
+
 export function Some<T>(value: T): Option<T> {
   return OptionValue.from(new SomeValue<T>(value));
 }
@@ -137,34 +147,10 @@ export interface OptionPromise<T> extends Promise<Option<T>> {
    * @see {@linkcode resultOrElse<U, F>} or {@linkcode optionOrElse<U>} for methods that are better
    *      suited for asynchronous mapping to another result or option
    */
-  mapOrElse<U, F>(
-    def: () => Result<U, F> | ResultPromise<U, F>,
-    fn: (ok: T) => Result<U, F> | ResultPromise<U, F>,
-  ): never;
-  mapOrElse<U>(
-    def: () => Option<U> | OptionPromise<U>,
-    fn: (ok: T) => Option<U> | OptionPromise<U>,
-  ): never;
-  mapOrElse<U>(
-    def: () => OptionPromise<U>,
-    fn: (some: T) => OptionPromise<U>,
-  ): OptionPromise<U>;
-  mapOrElse<U>(
-    def: () => Promise<U>,
-    fn: (some: T) => Promise<U>,
-  ): Promise<U>;
-  mapOrElse<U>(
-    def: () => Promise<U>,
-    fn: (some: T) => U,
-  ): Promise<U>;
-  mapOrElse<U>(
-    def: () => U,
-    fn: (some: T) => Promise<U>,
-  ): Promise<U>;
   mapOrElse<U>(
     def: () => U,
     fn: (some: T) => U,
-  ): Promise<U>;
+  ): AnythingButOption<U>;
 
   /**
    * Maps a {@linkcode Option<T>} to {@linkcode Option<U>} by applying fallback function default ,
@@ -175,14 +161,10 @@ export interface OptionPromise<T> extends Promise<Option<T>> {
    * @see {@linkcode mapOrElse<U>} for a method that is better
    *      suited for mapping to another return types than result or option
    */
-  optionOrElse<U>(
-    def: () => Option<U>,
-    fn: (ok: T) => Option<U>,
-  ): OptionPromise<U>;
-  optionOrElse<U>(
-    def: () => OptionPromise<U>,
-    fn: (ok: T) => OptionPromise<U>,
-  ): OptionPromise<U>;
+  optionOrElse<U extends OptionLike<unknown>>(
+    def: () => U,
+    fn: (ok: T) => U,
+  ): OptionOrElse<U>;
 
   /**
    * Maps an {@linkcode Option<T>} to {@linkcode Result<U,E>} by applying fallback function default,

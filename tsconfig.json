@@ -9,8 +9,7 @@
 		"module": "commonjs",
 		"moduleResolution": "node",
 		"strict": true,
-		/* "comment": "noImplicitOverride should be true when prettier has been updated", */
-		"noImplicitOverride": false,
+		"noImplicitOverride": true,
 		"noImplicitReturns": true,
 		"forceConsistentCasingInFileNames": true,
 		"sourceMap": true,

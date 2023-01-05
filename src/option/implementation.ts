@@ -81,29 +81,9 @@ export class SomeValue<T> implements UnwrapableOption<T> {
   }
 
   mapOrElse<U>(
-    def: () => OptionPromise<U>,
-    fn: (some: T) => OptionPromise<U>,
-  ): OptionPromise<U>;
-  mapOrElse<U>(
-    def: () => Promise<U>,
-    fn: (some: T) => Promise<U>,
-  ): Promise<U>;
-  mapOrElse<U>(
-    def: () => Promise<U>,
+    _: () => U,
     fn: (some: T) => U,
-  ): Promise<U> | U;
-  mapOrElse<U>(
-    def: () => U,
-    fn: (some: T) => Promise<U>,
-  ): Promise<U> | U;
-  mapOrElse<U>(
-    def: () => U,
-    fn: (some: T) => U,
-  ): U;
-  mapOrElse<U>(
-    _: () => U | Promise<U>,
-    fn: (some: T) => U | Promise<U> | OptionPromise<U>,
-  ): U | Promise<U> | OptionPromise<U> {
+  ): U {
     return fn(this.value);
   }
 
@@ -172,29 +152,9 @@ export class NoneValue<T> implements ChainableOption<T>, UnwrapableOption<T> {
   }
 
   mapOrElse<U>(
-    def: () => OptionPromise<U>,
-    fn: (some: T) => OptionPromise<U>,
-  ): OptionPromise<U>;
-  mapOrElse<U>(
-    def: () => Promise<U>,
-    fn: (some: T) => Promise<U>,
-  ): Promise<U>;
-  mapOrElse<U>(
-    def: () => Promise<U>,
-    fn: (some: T) => U,
-  ): Promise<U> | U;
-  mapOrElse<U>(
     def: () => U,
-    fn: (some: T) => Promise<U>,
-  ): Promise<U> | U;
-  mapOrElse<U>(
-    def: () => U,
-    fn: (some: T) => U,
-  ): U;
-  mapOrElse<U>(
-    def: () => U | Promise<U>,
-    _: (some: T) => U | Promise<U> | OptionPromise<U>,
-  ): U | Promise<U> | OptionPromise<U> {
+    _: (some: T) => U,
+  ): U {
     return def();
   }
 

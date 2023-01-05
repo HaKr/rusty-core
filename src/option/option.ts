@@ -2,7 +2,14 @@
 
 import { Result, ResultPromise } from "../result/api.ts";
 import { resultFrom } from "../result/result.ts";
-import { Option, optionFrom, OptionPromise } from "./api.ts";
+import {
+  AnythingButOption,
+  Option,
+  optionFrom,
+  OptionLike,
+  OptionOrElse,
+  OptionPromise,
+} from "./api.ts";
 import { ChainableOption } from "./chainable.ts";
 import { NoneValue, SomeValue } from "./implementation.ts";
 
@@ -262,61 +269,24 @@ export class PromisedOption<T> implements OptionPromise<T> {
     );
   }
 
-  mapOrElse<U, F>(
-    def: () => Result<U, F> | ResultPromise<U, F>,
-    fn: (ok: T) => Result<U, F> | ResultPromise<U, F>,
-  ): never;
-  mapOrElse<U, F>(
-    def: () => Option<U> | OptionPromise<U>,
-    fn: (ok: T) => Option<U> | OptionPromise<U>,
-  ): never;
-  mapOrElse<U>(
-    def: () => OptionPromise<U>,
-    fn: (some: T) => OptionPromise<U>,
-  ): OptionPromise<U>;
-  mapOrElse<U>(
-    def: () => Promise<U>,
-    fn: (some: T) => Promise<U>,
-  ): Promise<U>;
-  mapOrElse<U>(
-    def: () => Promise<U>,
-    fn: (some: T) => U,
-  ): Promise<U>;
-  mapOrElse<U>(
-    def: () => U,
-    fn: (some: T) => Promise<U>,
-  ): Promise<U>;
   mapOrElse<U>(
     def: () => U,
     fn: (some: T) => U,
-  ): Promise<U>;
-  mapOrElse<U>(
-    def: () => U | Promise<U>,
-    fn: (some: T) => U | Promise<U>,
-  ): Promise<U> | OptionPromise<U> {
-    return this.promise.then((option) =>
-      option.mapOrElse(
-        def as () => Promise<U>,
-        fn as (some: T) => Promise<U>,
-      )
-    ) as Promise<U>;
+  ): AnythingButOption<U> {
+    const rv = this.promise.then(
+      (option) => option.mapOrElse(def, fn),
+    );
+    return rv as AnythingButOption<U>;
   }
 
-  optionOrElse<U>(
-    def: () => Option<U>,
-    fn: (ok: T) => Option<U>,
-  ): OptionPromise<U>;
-  optionOrElse<U>(
-    def: () => OptionPromise<U>,
-    fn: (ok: T) => OptionPromise<U>,
-  ): OptionPromise<U>;
-  optionOrElse<U>(
-    def: () => Option<U> | OptionPromise<U>,
-    fn: (ok: T) => Option<U> | OptionPromise<U>,
-  ): OptionPromise<U> {
-    return optionFrom(
-      this.promise.then((result) => result.mapOrElse(def, fn)),
-    );
+  optionOrElse<U extends OptionLike<unknown>>(
+    def: () => U,
+    fn: (ok: T) => U,
+  ): OptionOrElse<U> {
+    const rv = this.promise.then((option) => option.mapOrElse(def, fn));
+    return new PromisedOption<U>(
+      rv as unknown as Promise<Option<U>>,
+    ) as OptionPromise<U> as OptionOrElse<U>;
   }
 
   resultOrElse<U, F>(
