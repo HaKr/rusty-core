@@ -1,19 +1,18 @@
 // import { Err, Ok, type Result } from "../result/result.ts";
 
-import { Result, ResultPromise } from "../result/api.ts";
+import { Ok, Result, ResultPromise } from "../result/api.ts";
 import { resultFrom } from "../result/result.ts";
-import {
-  AnythingButOption,
-  Option,
-  optionFrom,
-  OptionLike,
-  OptionOrElse,
-  OptionPromise,
-} from "./api.ts";
-import { ChainableOption } from "./chainable.ts";
+import type {
+  OptionMapOrElse,
+  OptionMapOrElsePromise,
+  OptionPromiseMapOrElse,
+  OptionPromiseMapOrElsePromise,
+} from "../conditional_types.ts";
+import { OptionCombinators } from "./combinators.ts";
 import { NoneValue, SomeValue } from "./implementation.ts";
+import { Option, optionFrom, OptionPromise } from "./api.ts";
 
-export interface UnwrapableOption<T> extends ChainableOption<T> {
+export interface UnwrapableOption<T> extends OptionCombinators<T> {
   type: symbol;
 
   unwrap(): T;
@@ -91,30 +90,16 @@ export class OptionValue<T> implements Option<T>, UnwrapableOption<T> {
   }
 
   mapOrElse<U>(
-    def: () => OptionPromise<U>,
-    fn: (some: T) => OptionPromise<U>,
-  ): OptionPromise<U>;
-  mapOrElse<U>(
-    def: () => Promise<U>,
-    fn: (some: T) => Promise<U>,
-  ): Promise<U>;
-  mapOrElse<U>(
-    def: () => Promise<U>,
-    fn: (some: T) => U,
-  ): Promise<U> | U;
-  mapOrElse<U>(
-    def: () => U,
-    fn: (some: T) => Promise<U>,
-  ): Promise<U> | U;
-  mapOrElse<U>(
     def: () => U,
     fn: (some: T) => U,
-  ): U;
-  mapOrElse<U>(
-    def: () => U | Promise<U>,
-    fn: (some: T) => U | Promise<U>,
-  ): U | Promise<U> | OptionPromise<U> {
-    return this.option.mapOrElse(def as () => U, fn as (some: T) => U);
+  ): OptionMapOrElse<U> {
+    return this.option.mapOrElse(def, fn);
+  }
+  mapOrElsePromise<U>(
+    def: () => U,
+    fn: (some: T) => U,
+  ): OptionMapOrElsePromise<U> {
+    return this.option.mapOrElsePromise(def, fn);
   }
 
   okOr<E>(err: E): Result<T, E> {
@@ -184,7 +169,7 @@ export class PromisedOption<T> implements OptionPromise<T> {
   }
 
   get [Symbol.toStringTag](): string {
-    return this.promise[Symbol.toStringTag];
+    return `OptionPromise`;
   }
 
   static create<U>(promise: Promise<Option<U>>): OptionPromise<U> {
@@ -265,28 +250,29 @@ export class PromisedOption<T> implements OptionPromise<T> {
   map<U>(fn: (some: T) => U): OptionPromise<U>;
   map<U>(fn: (some: T) => Promise<U> | U): OptionPromise<U> {
     return PromisedOption.create(
-      this.promise.then((option) => option.map(fn as (some: T) => U)),
+      this.promise.then((option) => {
+        return option.map(fn as (some: T) => U);
+      }),
     );
   }
 
   mapOrElse<U>(
     def: () => U,
     fn: (some: T) => U,
-  ): AnythingButOption<U> {
-    const rv = this.promise.then(
-      (option) => option.mapOrElse(def, fn),
-    );
-    return rv as AnythingButOption<U>;
+  ): OptionPromiseMapOrElse<U> {
+    return optionFrom(this.promise.then(
+      (option) => option.mapOrElse(def, fn) as Promise<Option<U>>,
+    )) as OptionPromiseMapOrElse<U>;
   }
 
-  optionOrElse<U extends OptionLike<unknown>>(
+  mapOrElsePromise<U>(
     def: () => U,
-    fn: (ok: T) => U,
-  ): OptionOrElse<U> {
-    const rv = this.promise.then((option) => option.mapOrElse(def, fn));
-    return new PromisedOption<U>(
-      rv as unknown as Promise<Option<U>>,
-    ) as OptionPromise<U> as OptionOrElse<U>;
+    fn: (some: T) => U,
+  ): OptionPromiseMapOrElsePromise<U> {
+    const r = this.promise.then(
+      (option) => option.mapOrElsePromise(def, fn) as U,
+    );
+    return r as OptionPromiseMapOrElsePromise<U>;
   }
 
   resultOrElse<U, F>(
@@ -301,7 +287,11 @@ export class PromisedOption<T> implements OptionPromise<T> {
     def: () => Result<U, F> | ResultPromise<U, F>,
     fn: (ok: T) => Result<U, F> | ResultPromise<U, F>,
   ): ResultPromise<U, F> {
-    return resultFrom(this.promise.then((result) => result.mapOrElse(def, fn)));
+    return resultFrom(
+      this.promise.then((result) =>
+        /*result.mapOrElse(def, fn)*/ Ok(0 as unknown as U)
+      ),
+    );
   }
 
   okOr<E>(err: E): ResultPromise<T, E> {

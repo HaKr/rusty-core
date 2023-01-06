@@ -1,17 +1,11 @@
-import { Result, type ResultPromise } from "../result/api.ts";
-import { type ChainableOption } from "./chainable.ts";
+import type {
+  OptionPromiseMapOrElse,
+  OptionPromiseMapOrElsePromise,
+} from "../conditional_types.ts";
+import type { Result, ResultPromise } from "../result/api.ts";
+import type { OptionCombinators } from "./combinators.ts";
 import { NoneValue, SomeValue } from "./implementation.ts";
 import { OptionValue, PromisedOption } from "./option.ts";
-
-type UseOptionPromiseInstead =
-  "Returning a promise here is not advisable, use optionOrElse instead";
-export type OptionLike<T = unknown> = Option<T> | OptionPromise<T>;
-export type AnythingButOption<T> = T extends OptionLike<infer X>
-  ? UseOptionPromiseInstead
-  : T extends Promise<infer U> ? Promise<U>
-  : Promise<T>;
-export type OptionOrElse<T> = T extends OptionLike<infer U> ? OptionPromise<U>
-  : never;
 
 export function Some<T>(value: T): Option<T> {
   return OptionValue.from(new SomeValue<T>(value));
@@ -44,7 +38,7 @@ export function optionFrom<T>(
     : Some(from as T);
 }
 
-export interface Option<T> extends ChainableOption<T> {
+export interface Option<T> extends OptionCombinators<T> {
   /**
    * Inserts value into the option if it is None, then returns a mutable reference to the contained value.
    *
@@ -141,30 +135,24 @@ export interface OptionPromise<T> extends Promise<Option<T>> {
   /**
    * Computes a default function result (if none), or applies a different function to the contained value (if any).
    *
-   * @returns `never` when any of the callback would return an Option or a Result,
-   *          indication you probably should use {@linkcode resultOrElse<U, F>} or {@linkcode optionOrElse<U>}
-   *
-   * @see {@linkcode resultOrElse<U, F>} or {@linkcode optionOrElse<U>} for methods that are better
-   *      suited for asynchronous mapping to another result or option
+   * @returns `never` when any of the callback would return a promise to something else than an Option,
+   *          to indicate you probably should use {@linkcode mapOrElsePromise<U, F>} or {@linkcode resultOrElse<U,F>}
    */
   mapOrElse<U>(
     def: () => U,
     fn: (some: T) => U,
-  ): AnythingButOption<U>;
+  ): OptionPromiseMapOrElse<U>;
 
   /**
-   * Maps a {@linkcode Option<T>} to {@linkcode Option<U>} by applying fallback function default ,
-   * or function fn to a contained {@linkcode Some} value.
+   * Computes a default function result (if none), or applies a different function to the contained value (if any).
    *
-   * This function can be used to chain result and option promises.
-   *
-   * @see {@linkcode mapOrElse<U>} for a method that is better
-   *      suited for mapping to another return types than result or option
+   * When U is `Promise<P>`, the actual return type will be Promise<P>, otherwise the return type will be Promise<U>.
+   * U should not be `Promise<Option<P>>`, @see {@linkcode mapOrElse<U>} for returning Option promises
    */
-  optionOrElse<U extends OptionLike<unknown>>(
+  mapOrElsePromise<U>(
     def: () => U,
-    fn: (ok: T) => U,
-  ): OptionOrElse<U>;
+    fn: (some: T) => U,
+  ): OptionPromiseMapOrElsePromise<U>;
 
   /**
    * Maps an {@linkcode Option<T>} to {@linkcode Result<U,E>} by applying fallback function default,
