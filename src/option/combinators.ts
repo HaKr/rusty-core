@@ -1,7 +1,7 @@
 import { Result, ResultPromise } from "../result/api";
 import type { Option, OptionPromise } from "./api";
 
-export interface ChainableOption<T> {
+export interface OptionCombinators<T> {
   [Symbol.iterator]: () => IterableIterator<T>;
 
   /**
@@ -116,7 +116,7 @@ export interface ChainableOption<T> {
   xor(optb: Option<T>): Option<T>;
 }
 
-export interface UnwrapableOption<T> extends ChainableOption<T> {
+export interface UnwrapableOption<T> extends OptionCombinators<T> {
   type: symbol;
 
   unwrap(): T;

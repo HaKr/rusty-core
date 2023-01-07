@@ -1,5 +1,5 @@
-import { Err, ErrPromise, Ok, OkPromise } from "../src/index.ts";
-import { None, NonePromise, Some, SomePromise } from "../src/option/api.ts";
+import { Err, ErrPromise, Ok, OkPromise } from "../src/index";
+import { None, NonePromise, Some, SomePromise } from "../src/option/api";
 
 Some(12)
   .mapOrElse(
