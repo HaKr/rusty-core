@@ -92,7 +92,7 @@ export class OkValue<T, E> implements UnwrapableResult<T, E> {
   }
 
   mapOrElsePromise<U>(
-    _: () => U,
+    _: (err: E) => U,
     fn: (some: T) => U,
   ): ResultMapOrElsePromise<U> {
     const rv = fn(this.okValue);

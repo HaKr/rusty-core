@@ -91,7 +91,7 @@ export class ResultValue<T, E> implements Result<T, E>, UnwrapableResult<T, E> {
   }
 
   mapOrElsePromise<U>(
-    def: () => U,
+    def: (err: E) => U,
     fn: (some: T) => U,
   ): ResultMapOrElsePromise<U> {
     return this.result.mapOrElsePromise(def, fn);
@@ -233,7 +233,7 @@ export class PromisedResult<T, E> implements ResultPromise<T, E> {
   }
 
   mapOrElsePromise<U>(
-    def: () => U,
+    def: (err: E) => U,
     fn: (some: T) => U,
   ): ResultMapOrElsePromise<U> {
     const r = this.promise.then(

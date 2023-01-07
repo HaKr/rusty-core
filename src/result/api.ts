@@ -93,7 +93,7 @@ export interface Result<T, E> {
    * U should not be `Promise<Option<P>>`, @see {@linkcode mapOrElse<U>} for returning Option promises
    */
   mapOrElsePromise<U>(
-    def: () => U,
+    def: (err: E) => U,
     fn: (some: T) => U,
   ): ResultMapOrElsePromise<U>;
 
@@ -201,7 +201,7 @@ export interface ResultPromise<T, E> extends Promise<Result<T, E>> {
    * U should not be `Promise<Option<P>>`, @see {@linkcode mapOrElse<U>} for returning Option promises
    */
   mapOrElsePromise<U>(
-    def: () => U,
+    def: (err: E) => U,
     fn: (some: T) => U,
   ): ResultMapOrElsePromise<U>;
 
