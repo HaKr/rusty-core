@@ -5,6 +5,7 @@ export type OptionLike<T = unknown> = Option<T> | OptionPromise<T>;
 
 export type OptionMapOrElse<T> = T extends
   Promise<Option<infer U>> | OptionPromise<infer U> ? OptionPromise<U>
+  : T extends ResultPromise<infer U, infer E> ? ResultPromise<U, E>
   : T extends Promise<infer P>
     ? "To return a Promise to anything other than Option, use mapOrElsePromise"
   : T;

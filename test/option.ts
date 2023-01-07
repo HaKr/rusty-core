@@ -3,9 +3,14 @@ import {
   assertEquals,
   assertNotEquals,
 } from "https://deno.land/std@0.170.0/testing/asserts.ts";
-import { optionFrom } from "../src/option/api.ts";
-
-import { None, Some } from "../src/option/api.ts";
+import {
+  None,
+  Ok,
+  OkPromise,
+  optionFrom,
+  ResultPromise,
+  Some,
+} from "../src/index.ts";
 
 Deno.test("option predicates", () => {
   assert(Some(42).isSome());
@@ -144,7 +149,7 @@ Deno.test("option promises", async () => {
   assertEquals(
     await None<number>()
       .orElse(async () => await Promise.resolve(None()))
-      .mapOrElse(
+      .mapOrElsePromise(
         async () => await Promise.resolve(333),
         async (n) => await Promise.resolve(n * 2),
       )
@@ -194,4 +199,12 @@ Deno.test("option take", () => {
   assertEquals(x, None());
   assertEquals(x.take(), None());
   assertEquals(x, None());
+});
+
+Deno.test("option combined with result", async () => {
+  const a = await Some("hello").mapOrElse<ResultPromise<boolean, string>>(
+    () => OkPromise<boolean, string>(false),
+    () => OkPromise<boolean, string>(true),
+  );
+  assertEquals(a, Ok(true));
 });

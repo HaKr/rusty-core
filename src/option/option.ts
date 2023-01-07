@@ -1,6 +1,4 @@
-// import { Err, Ok, type Result } from "../result/result.ts";
-
-import { Ok, Result, ResultPromise } from "../result/api.ts";
+import { Result, ResultPromise } from "../result/api.ts";
 import { resultFrom } from "../result/result.ts";
 import type {
   OptionMapOrElse,
