@@ -45,7 +45,7 @@ export interface ChainableOption<T> {
   map<U>(fn: (some: T) => U): Option<U>;
 
   /**
-   * Computes a default function result (if none), or applies a different function to the contained value (if some).
+   * Computes a default function result (if none), or applies a different function to the contained value (if any).
    */
   mapOrElse<U>(
     def: () => OptionPromise<U>,

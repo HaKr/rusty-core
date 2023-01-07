@@ -31,14 +31,14 @@ Also, great inspiration for the implementation came from the
 [Monads library](https://deno.land/x/monads@v0.5.10)
 
 This implementation supports the in-place modifiers of Option (insert, take), as
-well as chaining of Promises to either type.
+well as combining of Promises to either type.
 
 ### A note on Promises and async/await
 
-Both `Option` and `Result` have several chaining methods, like andThen, orElse
+Both `Option` and `Result` have several combinator methods, like andThen, orElse
 and map. Those methods accept one or more callback functions that can be async.
 
-The example below demonstrates how Promises and async callbacks can be chained
+The examples below demonstrates how Promises and async callbacks can be combined
 with the andThen and mapOrElse.
 
 #### Example
@@ -69,6 +69,55 @@ fetchJson("https:///jsonplaceholder.typicode.com/todos/1")
     (todo) => console.log("Success", todo),
   );
 ```
+
+#### Example with non-Rust helper functions
+```typescript
+function pauseIfNeeded(ms: Option<number>) {
+  return ms.mapOrElse(
+    () => Some(0),
+    async (ms) => Some(await sleep(ms)),
+  );
+}
+```
+Due to the second callback being async, the return type for that callback will be `Promise<Option>`
+But mapOrElse requires both callbacks to have the same result type. 
+```log
+error: TS2740 [ERROR]: Type 'Promise<Option<number>>' is missing the following properties from type 'Option<number>': getOrInsert, getOrInsertWith, insert, replace, and 18 more.
+    async (ms) => Some(await sleep(ms)),
+                  ~~~~~~~~~~~~~~~~~~~~~
+    at file:///projects/rusty-core/cli/waiting.ts:64:19
+
+    The expected type comes from the return type of this signature.
+      mapOrElse<U>(def: () => U, fn: (some: T) => U): OptionMapOrElse<U>;
+                                     ~~~~~~~~~~~~~~
+        at file:///projects/rusty-core/src/option/chainable.ts:57:34
+```
+So one could surround the `Some(0)`
+with `Promise.resolve`. But then the return type would be `Promise<Option>`. Combining multiple Option 
+and Result together would be cumbersome and error prone, as this requires constructs like
+```typescript
+(await pauseIfNeeded(Some(2))).map( ... );
+```
+
+To improve the usability, `mapOrElse` does return an `OptionPromise` or `ResultPromise`, in order to
+allow direct use of the combinators
+```typescript
+function pauseIfNeeded(ms: Option<number>) {
+  return ms.optionOrElse(
+    () => SomePromise(0),
+    async (ms) => Some(await sleep(ms)),
+  );
+}
+```
+At first, it might be confusing when to use `mapOrElse` and when `optionOrElse/resultOrElse`. Conditional types are
+used to assist a little here. When `mapOrElse` would return `Promise<Option>`, the compiler will complain
+when the combining methods are used:
+```log
+error: TS2339 [ERROR]: Property 'map' does not exist on type '"Returning a promise here is not advisable, use optionOrElse instead"'.
+pauseIfNeeded(Some(100)).map(console.log);
+```
+
+
 
 ## Option
 

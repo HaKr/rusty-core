@@ -1,3 +1,8 @@
+import type {
+  ResultMapOrElse,
+  ResultMapOrElsePromise,
+  ResultPromiseMapOrElse,
+} from "../conditional_types";
 import { type Option, OptionPromise } from "../option/mod";
 import { ErrValue, OkValue } from "./implementation";
 import { PromisedResult, ResultValue } from "./result";
@@ -76,34 +81,21 @@ export interface Result<T, E> {
    *
    * This function can be used to unpack a successful result while handling an error.
    */
-  mapOrElse<U, F>(
-    def: (err: E) => ResultPromise<U, F>,
-    fn: (ok: T) => ResultPromise<U, F>,
-  ): ResultPromise<U, F>;
-  mapOrElse<U, F>(
-    def: (err: E) => ResultPromise<U, F>,
-    fn: (ok: T) => Result<U, F>,
-  ): never;
-  mapOrElse<U, F>(
-    def: (err: E) => Result<U, F>,
-    fn: (ok: T) => ResultPromise<U, F>,
-  ): never;
-  mapOrElse<U>(
-    def: (err: E) => Promise<U>,
-    fn: (ok: T) => Promise<U>,
-  ): Promise<U>;
-  mapOrElse<U>(
-    def: (err: E) => Promise<U>,
-    fn: (ok: T) => U,
-  ): Promise<U> | U;
-  mapOrElse<U>(
-    def: (err: E) => U,
-    fn: (ok: T) => Promise<U>,
-  ): Promise<U> | U;
   mapOrElse<U>(
     def: (err: E) => U,
     fn: (ok: T) => U,
-  ): U;
+  ): ResultMapOrElse<U>;
+
+  /**
+   * Computes a default function result (if none), or applies a different function to the contained value (if any).
+   *
+   * When U is `Promise<P>`, the actual return type will be Promise<P>, otherwise the return type will be Promise<U>.
+   * U should not be `Promise<Option<P>>`, @see {@linkcode mapOrElse<U>} for returning Option promises
+   */
+  mapOrElsePromise<U>(
+    def: (err: E) => U,
+    fn: (some: T) => U,
+  ): ResultMapOrElsePromise<U>;
 
   /**
    * Converts from {@linkcode Result<T, E>} to {@linkcode Option<T>}.
@@ -197,34 +189,21 @@ export interface ResultPromise<T, E> extends Promise<Result<T, E>> {
    * @see {@linkcode resultOrElse<U, F>} or {@linkcode optionOrElse<U>} for methods that are better
    *      suited for asynchronous mapping to another result or option
    */
-  mapOrElse<U, F>(
-    def: (err: E) => Result<U, F> | ResultPromise<U, F>,
-    fn: (ok: T) => Result<U, F> | ResultPromise<U, F>,
-  ): never;
-  mapOrElse<U, F>(
-    def: () => Option<U> | OptionPromise<U>,
-    fn: (ok: T) => Option<U> | OptionPromise<U>,
-  ): never;
-  mapOrElse<U>(
-    def: (err: E) => Promise<U>,
-    fn: (ok: T) => Promise<U>,
-  ): Promise<U>;
-  mapOrElse<U>(
-    def: (err: E) => Promise<U>,
-    fn: (ok: T) => Promise<U>,
-  ): Promise<U>;
-  mapOrElse<U>(
-    def: (err: E) => Promise<U>,
-    fn: (ok: T) => U,
-  ): Promise<U>;
   mapOrElse<U>(
     def: (err: E) => U,
-    fn: (ok: T) => Promise<U>,
-  ): Promise<U>;
-  mapOrElse<U>(
+    fn: (some: T) => U,
+  ): ResultPromiseMapOrElse<U>;
+
+  /**
+   * Computes a default function result (if none), or applies a different function to the contained value (if any).
+   *
+   * When U is `Promise<P>`, the actual return type will be Promise<P>, otherwise the return type will be Promise<U>.
+   * U should not be `Promise<Option<P>>`, @see {@linkcode mapOrElse<U>} for returning Option promises
+   */
+  mapOrElsePromise<U>(
     def: (err: E) => U,
-    fn: (ok: T) => U,
-  ): Promise<U>;
+    fn: (some: T) => U,
+  ): ResultMapOrElsePromise<U>;
 
   /**
    * Maps a {@linkcode Result<T, E>} to {@linkcode Result<U,F>} by applying fallback function default to a contained {@linkcode Err} value,
@@ -235,14 +214,10 @@ export interface ResultPromise<T, E> extends Promise<Result<T, E>> {
    * @see {@linkcode mapOrElse<U>} for a method that is better
    *      suited for mapping to another return types than result or option
    */
-  resultOrElse<U, F>(
-    def: (err: E) => Result<U, F>,
-    fn: (ok: T) => Result<U, F>,
-  ): ResultPromise<U, F>;
-  resultOrElse<U, F>(
-    def: (err: E) => ResultPromise<U, F>,
-    fn: (ok: T) => ResultPromise<U, F>,
-  ): ResultPromise<U, F>;
+  // resultOrElse<U extends ResultLike<unknown, unknown>>(
+  //   def: (err: E) => U,
+  //   fn: (ok: T) => U,
+  // ): ResultOrElse<U>;
 
   /**
    * Maps a {@linkcode Result<T, E>} to {@linkcode Option<U>} by applying fallback function default to a contained {@linkcode Err} value,
@@ -253,14 +228,10 @@ export interface ResultPromise<T, E> extends Promise<Result<T, E>> {
    * @see {@linkcode mapOrElse<U>} for a method that is better
    *      suited for mapping to another return types than result or option
    */
-  optionOrElse<U>(
-    def: (err: E) => Option<U>,
-    fn: (ok: T) => Option<U>,
-  ): OptionPromise<U>;
-  optionOrElse<U, F>(
-    def: (err: E) => OptionPromise<U>,
-    fn: (ok: T) => OptionPromise<U>,
-  ): OptionPromise<U>;
+  // optionOrElse<U extends OptionLike<unknown>>(
+  //   def: (err: E) => U,
+  //   fn: (ok: T) => U,
+  // ): OptionOrElse<U>;
 
   /**
    * Converts from {@linkcode Result<T, E>} to {@linkcode Option<T>}.

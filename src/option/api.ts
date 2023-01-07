@@ -1,5 +1,9 @@
-import { Result, type ResultPromise } from "../result/api";
-import { type ChainableOption } from "./chainable";
+import type {
+  OptionMapOrElsePromise,
+  OptionPromiseMapOrElse,
+} from "../conditional_types";
+import type { Result, ResultPromise } from "../result/api";
+import type { OptionCombinators } from "./combinators";
 import { NoneValue, SomeValue } from "./implementation";
 import { OptionValue, PromisedOption } from "./option";
 
@@ -34,7 +38,7 @@ export function optionFrom<T>(
     : Some(from as T);
 }
 
-export interface Option<T> extends ChainableOption<T> {
+export interface Option<T> extends OptionCombinators<T> {
   /**
    * Inserts value into the option if it is None, then returns a mutable reference to the contained value.
    *
@@ -131,76 +135,24 @@ export interface OptionPromise<T> extends Promise<Option<T>> {
   /**
    * Computes a default function result (if none), or applies a different function to the contained value (if any).
    *
-   * @returns `never` when any of the callback would return an Option or a Result,
-   *          indication you probably should use {@linkcode resultOrElse<U, F>} or {@linkcode optionOrElse<U>}
-   *
-   * @see {@linkcode resultOrElse<U, F>} or {@linkcode optionOrElse<U>} for methods that are better
-   *      suited for asynchronous mapping to another result or option
+   * @returns `never` when any of the callback would return a promise to something else than an Option,
+   *          to indicate you probably should use {@linkcode mapOrElsePromise<U, F>}
    */
-  mapOrElse<U, F>(
-    def: () => Result<U, F> | ResultPromise<U, F>,
-    fn: (ok: T) => Result<U, F> | ResultPromise<U, F>,
-  ): never;
-  mapOrElse<U>(
-    def: () => Option<U> | OptionPromise<U>,
-    fn: (ok: T) => Option<U> | OptionPromise<U>,
-  ): never;
-  mapOrElse<U>(
-    def: () => OptionPromise<U>,
-    fn: (some: T) => OptionPromise<U>,
-  ): OptionPromise<U>;
-  mapOrElse<U>(
-    def: () => Promise<U>,
-    fn: (some: T) => Promise<U>,
-  ): Promise<U>;
-  mapOrElse<U>(
-    def: () => Promise<U>,
-    fn: (some: T) => U,
-  ): Promise<U>;
-  mapOrElse<U>(
-    def: () => U,
-    fn: (some: T) => Promise<U>,
-  ): Promise<U>;
   mapOrElse<U>(
     def: () => U,
     fn: (some: T) => U,
-  ): Promise<U>;
+  ): OptionPromiseMapOrElse<U>;
 
   /**
-   * Maps a {@linkcode Option<T>} to {@linkcode Option<U>} by applying fallback function default ,
-   * or function fn to a contained {@linkcode Some} value.
+   * Computes a default function result (if none), or applies a different function to the contained value (if any).
    *
-   * This function can be used to chain result and option promises.
-   *
-   * @see {@linkcode mapOrElse<U>} for a method that is better
-   *      suited for mapping to another return types than result or option
+   * When U is `Promise<P>`, the actual return type will be Promise<P>, otherwise the return type will be Promise<U>.
+   * U should not be `Promise<Option<P>>`, @see {@linkcode mapOrElse<U>} for returning Option promises
    */
-  optionOrElse<U>(
-    def: () => Option<U>,
-    fn: (ok: T) => Option<U>,
-  ): OptionPromise<U>;
-  optionOrElse<U>(
-    def: () => OptionPromise<U>,
-    fn: (ok: T) => OptionPromise<U>,
-  ): OptionPromise<U>;
-
-  /**
-   * Maps an {@linkcode Option<T>} to {@linkcode Result<U,E>} by applying fallback function default,
-   * or function fn to a contained {@linkcode Some} value.
-   *
-   * This function can be used to chain result and option promises.
-   *
-   * @see {@linkcode mapOrElse<U>} for a method that is better
-   *      suited for mapping to another return types than result or option
-   */
-  resultOrElse<U, F>(
-    def: () => Result<U, F>,
-    fn: (ok: T) => Result<U, F>,
-  ): ResultPromise<U, F>;
-  resultOrElse<U, F>(
-    def: () => ResultPromise<U, F>,
-    fn: (ok: T) => ResultPromise<U, F>,
-  ): ResultPromise<U, F>;
+  mapOrElsePromise<U>(
+    def: () => U,
+    fn: (some: T) => U,
+  ): OptionMapOrElsePromise<U>;
 
   /**
    * Transforms the {@linkcode Option<T>} into a {@linkcode Result<T, E>},

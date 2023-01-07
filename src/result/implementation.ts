@@ -1,5 +1,6 @@
+import { ResultMapOrElse, ResultMapOrElsePromise } from "../conditional_types";
 import { None, type Option, Some } from "../option/mod";
-import { Result, ResultPromise } from "./api";
+import type { Result, ResultPromise } from "./api";
 import {
   Err,
   Ok,
@@ -79,43 +80,24 @@ export class OkValue<T, E> implements UnwrapableResult<T, E> {
     return Ok(this.okValue);
   }
 
-  mapOrElse<U, F>(
-    def: (err: E) => ResultPromise<U, F>,
-    fn: (ok: T) => ResultPromise<U, F>,
-  ): ResultPromise<U, F>;
-  mapOrElse<U, F>(
-    def: (err: E) => ResultPromise<U, F>,
-    fn: (ok: T) => Result<U, F>,
-  ): never;
-  mapOrElse<U, F>(
-    def: (err: E) => Result<U, F>,
-    fn: (ok: T) => ResultPromise<U, F>,
-  ): never;
   mapOrElse<U>(
-    def: (err: E) => Result<U, E>,
-    fn: (ok: T) => ResultPromise<U, E>,
-  ): ResultPromise<U, E>;
-  mapOrElse<U>(
-    def: (err: E) => Promise<U>,
-    fn: (ok: T) => Promise<U>,
-  ): Promise<U>;
-  mapOrElse<U>(
-    def: (err: E) => Promise<U>,
+    _: (err: E) => U,
     fn: (ok: T) => U,
-  ): Promise<U> | U;
-  mapOrElse<U>(
-    def: (err: E) => U,
-    fn: (ok: T) => Promise<U>,
-  ): Promise<U> | U;
-  mapOrElse<U>(
-    def: (err: E) => U,
-    fn: (ok: T) => U,
-  ): U;
-  mapOrElse<U>(
-    _: (err: E) => U | Promise<U>,
-    fn: (ok: T) => U | Promise<U>,
-  ): U | Promise<U> {
-    return fn(this.okValue);
+  ): ResultMapOrElse<U> {
+    const rv = fn(this.okValue);
+    return (rv instanceof Promise
+      ? resultFrom(rv as Promise<Result<unknown, unknown>>)
+      : rv) as ResultMapOrElse<U>;
+  }
+
+  mapOrElsePromise<U>(
+    _: (err: E) => U,
+    fn: (some: T) => U,
+  ): ResultMapOrElsePromise<U> {
+    const rv = fn(this.okValue);
+    return (rv instanceof Promise
+      ? rv
+      : Promise.resolve(rv)) as ResultMapOrElsePromise<U>;
   }
 
   ok(): Option<T> {
@@ -199,39 +181,24 @@ export class ErrValue<T, E> implements UnwrapableResult<T, E> {
       : Err(alt);
   }
 
-  mapOrElse<U, F>(
-    def: (err: E) => ResultPromise<U, F>,
-    fn: (ok: T) => ResultPromise<U, F>,
-  ): ResultPromise<U, F>;
-  mapOrElse<U, F>(
-    def: (err: E) => ResultPromise<U, F>,
-    fn: (ok: T) => Result<U, F>,
-  ): never;
-  mapOrElse<U, F>(
-    def: (err: E) => Result<U, F>,
-    fn: (ok: T) => ResultPromise<U, F>,
-  ): never;
-  mapOrElse<U>(
-    def: (err: E) => Promise<U>,
-    fn: (ok: T) => Promise<U>,
-  ): Promise<U>;
-  mapOrElse<U>(
-    def: (err: E) => Promise<U>,
-    fn: (ok: T) => U,
-  ): Promise<U> | U;
   mapOrElse<U>(
     def: (err: E) => U,
-    fn: (ok: T) => Promise<U>,
-  ): Promise<U> | U;
-  mapOrElse<U>(
+    _: (ok: T) => U,
+  ): ResultMapOrElse<U> {
+    const rv = def(this.errValue);
+    return (rv instanceof Promise
+      ? resultFrom(rv as Promise<Result<unknown, unknown>>)
+      : rv) as ResultMapOrElse<U>;
+  }
+
+  mapOrElsePromise<U>(
     def: (err: E) => U,
-    fn: (ok: T) => U,
-  ): U;
-  mapOrElse<U>(
-    def: (err: E) => U | Promise<U>,
-    _: (some: T) => U | Promise<U>,
-  ): U | Promise<U> {
-    return def(this.errValue);
+    _: (some: T) => U,
+  ): ResultMapOrElsePromise<U> {
+    const rv = def(this.errValue);
+    return (rv instanceof Promise
+      ? rv
+      : Promise.resolve(rv)) as ResultMapOrElsePromise<U>;
   }
 
   ok(): Option<T> {
