@@ -1,5 +1,5 @@
-import { Option, OptionPromise } from "./option/api.ts";
-import { Result, ResultPromise } from "./result/api.ts";
+import { Option, OptionPromise } from "./option/api";
+import { Result, ResultPromise } from "./result/api";
 
 export type OptionLike<T = unknown> = Option<T> | OptionPromise<T>;
 

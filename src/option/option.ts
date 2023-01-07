@@ -260,7 +260,7 @@ export class PromisedOption<T> implements OptionPromise<T> {
   ): OptionPromiseMapOrElse<U> {
     return optionFrom(this.promise.then(
       (option) => option.mapOrElse(def, fn) as Promise<Option<U>>,
-    )) as OptionPromiseMapOrElse<U>;
+    )) as unknown as OptionPromiseMapOrElse<U>;
   }
 
   mapOrElsePromise<U>(

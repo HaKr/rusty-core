@@ -1,4 +1,4 @@
-import { None, type Option, Some, SomePromise } from "../src/option/api.ts";
+import { None, type Option, Some, SomePromise } from "../src/option/api";
 
 function sleep(ms: number): Promise<number> {
   return new Promise((resolve) => {

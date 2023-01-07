@@ -1,4 +1,8 @@
-import { Result, ResultPromise } from "../result/api";
+import type {
+  OptionMapOrElse,
+  OptionMapOrElsePromise,
+} from "../conditional_types";
+import type { Result, ResultPromise } from "../result/api";
 import type { Option, OptionPromise } from "./api";
 
 export interface OptionCombinators<T> {
@@ -46,24 +50,22 @@ export interface OptionCombinators<T> {
 
   /**
    * Computes a default function result (if none), or applies a different function to the contained value (if any).
+   *
+   * When U is `Promise<Option<O>>`, the actual return type will be `OptionPromise<O>`.
+   * U should not be `Promise<P>` where P is not Option, @see {@linkcode mapOrElsePromise<U>} for returning non-Option promises
    */
-  mapOrElse<U>(
-    def: () => OptionPromise<U>,
-    fn: (some: T) => OptionPromise<U>,
-  ): OptionPromise<U>;
-  mapOrElse<U>(
-    def: () => Promise<U>,
-    fn: (some: T) => Promise<U>,
-  ): Promise<U>;
-  mapOrElse<U>(
-    def: () => Promise<U>,
-    fn: (some: T) => U,
-  ): Promise<U> | U;
-  mapOrElse<U>(
+  mapOrElse<U>(def: () => U, fn: (some: T) => U): OptionMapOrElse<U>;
+
+  /**
+   * Computes a default function result (if none), or applies a different function to the contained value (if any).
+   *
+   * When U is `Promise<P>`, the actual return type will be Promise<P>, otherwise the return type will be Promise<U>.
+   * U should not be `Promise<Option<P>>`, @see {@linkcode mapOrElse<U>} for returning Option promises
+   */
+  mapOrElsePromise<U>(
     def: () => U,
-    fn: (some: T) => Promise<U>,
-  ): Promise<U> | U;
-  mapOrElse<U>(def: () => U, fn: (some: T) => U): U;
+    fn: (some: T) => U,
+  ): OptionMapOrElsePromise<U>;
 
   /**
    * Transforms the {@linkcode Option<T>} into a {@linkcode Result<T, E>},

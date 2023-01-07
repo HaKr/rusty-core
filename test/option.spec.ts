@@ -146,7 +146,7 @@ it("option promises", async () => {
   assert.deepStrictEqual(
     await None<number>()
       .orElse(async () => await Promise.resolve(None()))
-      .mapOrElse(
+      .mapOrElsePromise(
         async () => await Promise.resolve(333),
         async (n) => await Promise.resolve(n * 2),
       )
