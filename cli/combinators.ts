@@ -1,3 +1,4 @@
+import { Err, ErrPromise, Ok, OkPromise } from "../src/index.ts";
 import { None, NonePromise, Some, SomePromise } from "../src/option/api.ts";
 
 Some(12)
@@ -34,7 +35,7 @@ Some(12)
         (ok) => console.log("Success: ", ok, (12 + 1) * 2 * 3 * 4 * 5 * 6),
       )
   );
-/*
+
 Ok<number, string>(42)
   .mapOrElse(
     Err<number, string>,
@@ -60,8 +61,13 @@ Ok<number, string>(42)
     ErrPromise<number, string>,
     async (n) => await OkPromise<number, string>(n * 6),
   )
-  .mapOrElse<void>(
-    (err) => console.error("Failed: ", err),
-    (ok) => console.log("Success: ", ok, (42 + 1) * 2 * 3 * 4 * 5 * 6),
-  );
-*/
+  .mapOrElsePromise(
+    () => 0,
+    (n) => n,
+  ).then((y) =>
+    Ok(y).ok().mapOrElse(
+      () => console.error("Failed: "),
+      (ok) => console.log("Success: ", ok, (42 + 1) * 2 * 3 * 4 * 5 * 6),
+    )
+  )
+  .then(console.log);

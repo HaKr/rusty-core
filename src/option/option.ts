@@ -6,7 +6,6 @@ import type {
   OptionMapOrElse,
   OptionMapOrElsePromise,
   OptionPromiseMapOrElse,
-  OptionPromiseMapOrElsePromise,
 } from "../conditional_types.ts";
 import { OptionCombinators } from "./combinators.ts";
 import { NoneValue, SomeValue } from "./implementation.ts";
@@ -95,6 +94,7 @@ export class OptionValue<T> implements Option<T>, UnwrapableOption<T> {
   ): OptionMapOrElse<U> {
     return this.option.mapOrElse(def, fn);
   }
+
   mapOrElsePromise<U>(
     def: () => U,
     fn: (some: T) => U,
@@ -268,30 +268,11 @@ export class PromisedOption<T> implements OptionPromise<T> {
   mapOrElsePromise<U>(
     def: () => U,
     fn: (some: T) => U,
-  ): OptionPromiseMapOrElsePromise<U> {
+  ): OptionMapOrElsePromise<U> {
     const r = this.promise.then(
       (option) => option.mapOrElsePromise(def, fn) as U,
     );
-    return r as OptionPromiseMapOrElsePromise<U>;
-  }
-
-  resultOrElse<U, F>(
-    def: () => Result<U, F>,
-    fn: (ok: T) => Result<U, F>,
-  ): ResultPromise<U, F>;
-  resultOrElse<U, F>(
-    def: () => ResultPromise<U, F>,
-    fn: (ok: T) => ResultPromise<U, F>,
-  ): ResultPromise<U, F>;
-  resultOrElse<U, F>(
-    def: () => Result<U, F> | ResultPromise<U, F>,
-    fn: (ok: T) => Result<U, F> | ResultPromise<U, F>,
-  ): ResultPromise<U, F> {
-    return resultFrom(
-      this.promise.then((result) =>
-        /*result.mapOrElse(def, fn)*/ Ok(0 as unknown as U)
-      ),
-    );
+    return r as OptionMapOrElsePromise<U>;
   }
 
   okOr<E>(err: E): ResultPromise<T, E> {

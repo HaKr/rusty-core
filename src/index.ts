@@ -9,4 +9,11 @@ export {
 
 export type { Result, ResultPromise } from "./result/api.ts";
 export { Err, ErrPromise, Ok, OkPromise, resultFrom } from "./result/api.ts";
-export type { OptionLike, ResultLike } from "./conditional_types.ts";
+export type {
+  OptionMapOrElse,
+  OptionMapOrElsePromise,
+  OptionPromiseMapOrElse,
+  ResultMapOrElse,
+  ResultMapOrElsePromise,
+  ResultPromiseMapOrElse,
+} from "./conditional_types.ts";

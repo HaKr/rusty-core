@@ -1,4 +1,7 @@
-import { ResultMapOrElse } from "../conditional_types.ts";
+import {
+  ResultMapOrElse,
+  ResultMapOrElsePromise,
+} from "../conditional_types.ts";
 import { None, type Option, Some } from "../option/mod.ts";
 import type { Result, ResultPromise } from "./api.ts";
 import {
@@ -82,7 +85,20 @@ export class OkValue<T, E> implements UnwrapableResult<T, E> {
     _: (err: E) => U,
     fn: (ok: T) => U,
   ): ResultMapOrElse<U> {
-    return fn(this.okValue) as ResultMapOrElse<U>;
+    const rv = fn(this.okValue);
+    return (rv instanceof Promise
+      ? resultFrom(rv as Promise<Result<unknown, unknown>>)
+      : rv) as ResultMapOrElse<U>;
+  }
+
+  mapOrElsePromise<U>(
+    _: () => U,
+    fn: (some: T) => U,
+  ): ResultMapOrElsePromise<U> {
+    const rv = fn(this.okValue);
+    return (rv instanceof Promise
+      ? rv
+      : Promise.resolve(rv)) as ResultMapOrElsePromise<U>;
   }
 
   ok(): Option<T> {
@@ -170,7 +186,20 @@ export class ErrValue<T, E> implements UnwrapableResult<T, E> {
     def: (err: E) => U,
     _: (ok: T) => U,
   ): ResultMapOrElse<U> {
-    return def(this.errValue) as ResultMapOrElse<U>;
+    const rv = def(this.errValue);
+    return (rv instanceof Promise
+      ? resultFrom(rv as Promise<Result<unknown, unknown>>)
+      : rv) as ResultMapOrElse<U>;
+  }
+
+  mapOrElsePromise<U>(
+    def: (err: E) => U,
+    _: (some: T) => U,
+  ): ResultMapOrElsePromise<U> {
+    const rv = def(this.errValue);
+    return (rv instanceof Promise
+      ? rv
+      : Promise.resolve(rv)) as ResultMapOrElsePromise<U>;
   }
 
   ok(): Option<T> {

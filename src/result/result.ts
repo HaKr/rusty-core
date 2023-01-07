@@ -1,7 +1,6 @@
 import type {
-  ResultLike,
   ResultMapOrElse,
-  ResultOrElse,
+  ResultMapOrElsePromise,
   ResultPromiseMapOrElse,
 } from "../conditional_types.ts";
 import { optionFrom } from "../option/api.ts";
@@ -89,6 +88,13 @@ export class ResultValue<T, E> implements Result<T, E>, UnwrapableResult<T, E> {
     fn: (ok: T) => U,
   ): ResultMapOrElse<U> {
     return this.result.mapOrElse(def, fn);
+  }
+
+  mapOrElsePromise<U>(
+    def: () => U,
+    fn: (some: T) => U,
+  ): ResultMapOrElsePromise<U> {
+    return this.result.mapOrElsePromise(def, fn);
   }
 
   ok(): Option<T> {
@@ -219,32 +225,22 @@ export class PromisedResult<T, E> implements ResultPromise<T, E> {
     def: (err: E) => U,
     fn: (some: T) => U,
   ): ResultPromiseMapOrElse<U> {
-    return this.promise.then((result) =>
-      result.mapOrElse(def, fn)
+    return resultFrom(
+      this.promise.then((result) =>
+        result.mapOrElse(def, fn) as Promise<Result<U, E>>
+      ),
     ) as ResultPromiseMapOrElse<U>;
   }
 
-  resultOrElse<U extends ResultLike<unknown, unknown>>(
-    def: (err: E) => U,
-    fn: (ok: T) => U,
-  ): ResultOrElse<U> {
-    const rv = this.promise.then((result) => result.mapOrElse(def, fn));
-    const rp: ResultPromise<U, E> = resultFrom(
-      rv as unknown as Promise<Result<U, E>>,
+  mapOrElsePromise<U>(
+    def: () => U,
+    fn: (some: T) => U,
+  ): ResultMapOrElsePromise<U> {
+    const r = this.promise.then(
+      (result) => result.mapOrElsePromise(def, fn) as U,
     );
-
-    return rp as ResultOrElse<U>;
+    return r as ResultMapOrElsePromise<U>;
   }
-
-  // optionOrElse<U extends OptionLike<unknown>>(
-  //   def: (err: E) => U,
-  //   fn: (ok: T) => U,
-  // ): OptionOrElse<U> {
-  //   const rv = this.promise.then((result) => result.mapOrElse(def, fn));
-  //   return new PromisedOption<U>(
-  //     rv as unknown as Promise<Option<U>>,
-  //   ) as OptionPromise<U> as OptionOrElse<U>;
-  // }
 
   ok(): OptionPromise<T> {
     return optionFrom(this.promise.then((result) => result.ok()));

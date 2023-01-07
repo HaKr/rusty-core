@@ -1,6 +1,6 @@
 import type {
+  OptionMapOrElsePromise,
   OptionPromiseMapOrElse,
-  OptionPromiseMapOrElsePromise,
 } from "../conditional_types.ts";
 import type { Result, ResultPromise } from "../result/api.ts";
 import type { OptionCombinators } from "./combinators.ts";
@@ -136,7 +136,7 @@ export interface OptionPromise<T> extends Promise<Option<T>> {
    * Computes a default function result (if none), or applies a different function to the contained value (if any).
    *
    * @returns `never` when any of the callback would return a promise to something else than an Option,
-   *          to indicate you probably should use {@linkcode mapOrElsePromise<U, F>} or {@linkcode resultOrElse<U,F>}
+   *          to indicate you probably should use {@linkcode mapOrElsePromise<U, F>}
    */
   mapOrElse<U>(
     def: () => U,
@@ -152,25 +152,7 @@ export interface OptionPromise<T> extends Promise<Option<T>> {
   mapOrElsePromise<U>(
     def: () => U,
     fn: (some: T) => U,
-  ): OptionPromiseMapOrElsePromise<U>;
-
-  /**
-   * Maps an {@linkcode Option<T>} to {@linkcode Result<U,E>} by applying fallback function default,
-   * or function fn to a contained {@linkcode Some} value.
-   *
-   * This function can be used to chain result and option promises.
-   *
-   * @see {@linkcode mapOrElse<U>} for a method that is better
-   *      suited for mapping to another return types than result or option
-   */
-  resultOrElse<U, F>(
-    def: () => Result<U, F>,
-    fn: (ok: T) => Result<U, F>,
-  ): ResultPromise<U, F>;
-  resultOrElse<U, F>(
-    def: () => ResultPromise<U, F>,
-    fn: (ok: T) => ResultPromise<U, F>,
-  ): ResultPromise<U, F>;
+  ): OptionMapOrElsePromise<U>;
 
   /**
    * Transforms the {@linkcode Option<T>} into a {@linkcode Result<T, E>},
