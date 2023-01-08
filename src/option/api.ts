@@ -1,8 +1,9 @@
 import type {
-  OptionMapOrElsePromise,
+  OptionPromiseMapOption,
   OptionPromiseMapOrElse,
+  OptionPromiseMapResult,
 } from "../conditional_types";
-import type { Result, ResultPromise } from "../result/api";
+import type { ResultPromise } from "../result/api";
 import type { OptionCombinators } from "./combinators";
 import { NoneValue, SomeValue } from "./implementation";
 import { OptionValue, PromisedOption } from "./option";
@@ -133,26 +134,39 @@ export interface OptionPromise<T> extends Promise<Option<T>> {
   map<U>(fn: (some: T) => U): OptionPromise<U>;
 
   /**
-   * Computes a default function result (if none), or applies a different function to the contained value (if any).
+   * Computes a default function result (if None), or applies a different function to the contained value (if Some).
    *
-   * @returns `never` when any of the callback would return a promise to something else than an Option,
-   *          to indicate you probably should use {@linkcode mapOrElsePromise<U, F>}
+   * When U is `Promise<Option<O>>`, the actual return type will be `OptionPromise<O>`.
+   * U should not be `Promise<P>` where P is not Option, @see {@linkcode mapOrElse<U>} or @see {@linkcode mapResult<U>}for returning non-Option promises
+   */
+  mapOption<U>(
+    def: () => U,
+    fn: (some: T) => U,
+  ): OptionPromiseMapOption<U>;
+
+  /**
+   * Computes a default function result (if None), or applies a different function to the contained value (if Some).
+   *
+   * When U is `Promise<Result<T,F>>`, the actual return type will be `ResultPromise<T,F>`.
+   * U should not be `Promise<P>` where P is not Option, @see {@linkcode mapOrElse<U>} or {@linkcode mapOption<U>} for returning other promises
+   */
+  mapResult<U>(
+    def: () => U,
+    fn: (some: T) => U,
+  ): OptionPromiseMapResult<U>;
+
+  /**
+   * Computes a default function result (if None), or applies a different function to the contained value (if Some).
+   *
+   * When U is `Promise<P>`, the actual return type will be Promise<P>, otherwise the return type will be Promise<U>.
+   *
+   * U should not be `Promise<Option<P>>` @see {@linkcode mapOption<U>}, nor `Promise<Result<T,F>>`{@linkcode mapResult<U>} for
+   * returning promises to Option or Result
    */
   mapOrElse<U>(
     def: () => U,
     fn: (some: T) => U,
   ): OptionPromiseMapOrElse<U>;
-
-  /**
-   * Computes a default function result (if none), or applies a different function to the contained value (if any).
-   *
-   * When U is `Promise<P>`, the actual return type will be Promise<P>, otherwise the return type will be Promise<U>.
-   * U should not be `Promise<Option<P>>`, @see {@linkcode mapOrElse<U>} for returning Option promises
-   */
-  mapOrElsePromise<U>(
-    def: () => U,
-    fn: (some: T) => U,
-  ): OptionMapOrElsePromise<U>;
 
   /**
    * Transforms the {@linkcode Option<T>} into a {@linkcode Result<T, E>},
