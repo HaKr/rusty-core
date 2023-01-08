@@ -5,8 +5,8 @@ Option and Result as inspired by https://doc.rust-lang.org/stable/core
 ### Usage (Deno)
 
 ```typescript
-import type { Option, OptionPromise, Result, ResultPromise } from "https://deno.land/x/rusty_core@v1.1.18/mod.ts";
-import { Err, None, Ok, optionFrom, resultFrom, Some } from "https://deno.land/x/rusty_core@v1.1.18/mod.ts";
+import type { Option, OptionPromise, Result, ResultPromise } from "https://deno.land/x/rusty_core@v2.0.0/mod.ts";
+import { Err, None, Ok, optionFrom, resultFrom, Some } from "https://deno.land/x/rusty_core@v2.0.0/mod.ts";
 ```
 
 ## Table of contents
@@ -76,15 +76,15 @@ function pauseIfNeeded(ms: Option<number>) {
 Due to the second callback being async, the return type for that callback will be `Promise<Option>`
 But mapOrElse requires both callbacks to have the same result type. 
 ```log
-error: TS2740 [ERROR]: Type 'Promise<Option<number>>' is missing the following properties from type 'Option<number>': getOrInsert, getOrInsertWith, insert, replace, and 18 more.
+error: TS2740 [ERROR]: Type 'Promise<Option<number>>' is missing the following properties from type 'Option<number>': getOrInsert, getOrInsertWith, insert, replace, and 19 more.
     async (ms) => Some(await sleep(ms)),
                   ~~~~~~~~~~~~~~~~~~~~~
-    at file:///projects/rusty-core/cli/waiting.ts:64:19
+    at file:///projects/rusty-core/cli/doc.ts:10:19
 
     The expected type comes from the return type of this signature.
-      mapOrElse<U>(def: () => U, fn: (some: T) => U): OptionMapOrElse<U>;
-                                     ~~~~~~~~~~~~~~
-        at file:///projects/rusty-core/src/option/chainable.ts:57:34
+        fn: (some: T) => U,
+            ~~~~~~~~~~~~~~
+        at file:///projects/rusty-core/src/option/combinators.ts:76:9
 ```
 So one could surround the `Some(0)`
 with `Promise.resolve`. But then the return type would be `Promise<Option>`. Combining multiple Option 
@@ -93,24 +93,25 @@ and Result together would be cumbersome and error prone, as this requires constr
 (await pauseIfNeeded(Some(2))).map( ... );
 ```
 
-To improve the usability, `mapOrElse` does return an `OptionPromise` or `ResultPromise`, in order to
+To improve the usability, `mapOption` and `mapResult` were added to return an `OptionPromise` or `ResultPromise`, in order to
 allow direct use of the combinators
 ```typescript
 function pauseIfNeeded(ms: Option<number>) {
-  return ms.optionOrElse(
+  return ms.mapOption(
     () => SomePromise(0),
     async (ms) => Some(await sleep(ms)),
   );
 }
 ```
-At first, it might be confusing when to use `mapOrElse` and when `optionOrElse/resultOrElse`. Conditional types are
-used to assist a little here. When `mapOrElse` would return `Promise<Option>`, the compiler will complain
+At first, it might be confusing when to use `mapOrElse` and when `mapOption` or `mapResult`. Conditional types are
+used to assist a little here. When `mapOrElse` would return something like `Promise<Option>` or `Promise<Result>`, the compiler will complain
 when the combining methods are used:
 ```log
-error: TS2339 [ERROR]: Property 'map' does not exist on type '"Returning a promise here is not advisable, use optionOrElse instead"'.
-pauseIfNeeded(Some(100)).map(console.log);
+error: TS2339 [ERROR]: Property 'map' does not exist on type '"To return a Promise to an Option, use mapOption"'.
+pauseIfNeeded(Some(9)).map(None);
 ```
 
+See the combinators test for more examples.
 
 
 ## Option

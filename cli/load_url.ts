@@ -5,7 +5,7 @@ function doFetch(url: string): ResultPromise<Response, string> {
     fetch(url)
       .then(
         Ok<Response, string>,
-        (err) => Err(err.toString()),
+        (err) => Err<Response, string>(err.toString()),
       ),
   );
 }

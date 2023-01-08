@@ -1,6 +1,7 @@
-import {
+import type {
+  OptionMapOption,
   OptionMapOrElse,
-  OptionMapOrElsePromise,
+  OptionMapResult,
 } from "../conditional_types.ts";
 import {
   Err,
@@ -84,24 +85,28 @@ export class SomeValue<T> implements UnwrapableOption<T> {
       : Some(newVal);
   }
 
+  mapOption<U>(
+    _: () => U,
+    fn: (some: T) => U,
+  ): OptionMapOption<U> {
+    const rv = fn(this.value);
+    return (rv instanceof Promise
+      ? optionFrom(rv as Promise<Option<unknown>>)
+      : rv) as OptionMapOption<U>;
+  }
+
+  mapResult<U>(_: () => U, fn: (some: T) => U): OptionMapResult<U> {
+    const rv = fn(this.value);
+    return (rv instanceof Promise
+      ? resultFrom(rv as Promise<Result<unknown, unknown>>)
+      : rv) as OptionMapResult<U>;
+  }
+
   mapOrElse<U>(
     _: () => U,
     fn: (some: T) => U,
   ): OptionMapOrElse<U> {
-    const rv = fn(this.value);
-    return (rv instanceof Promise
-      ? optionFrom(rv as Promise<Option<unknown>>)
-      : rv) as OptionMapOrElse<U>;
-  }
-
-  mapOrElsePromise<U>(
-    _: () => U,
-    fn: (some: T) => U,
-  ): OptionMapOrElsePromise<U> {
-    const rv = fn(this.value);
-    return (rv instanceof Promise
-      ? rv
-      : Promise.resolve(rv)) as OptionMapOrElsePromise<U>;
+    return fn(this.value) as OptionMapOrElse<U>;
   }
 
   okOr<E>(_: E): Result<T, E> {
@@ -168,24 +173,28 @@ export class NoneValue<T> implements OptionCombinators<T>, UnwrapableOption<T> {
     return OptionValue.from(this as unknown as NoneValue<U>);
   }
 
+  mapOption<U>(
+    def: () => U,
+    _: (some: T) => U,
+  ): OptionMapOption<U> {
+    const rv = def();
+    return (rv instanceof Promise
+      ? optionFrom(rv as Promise<Option<unknown>>)
+      : rv) as OptionMapOption<U>;
+  }
+
+  mapResult<U>(def: () => U, _: (some: T) => U): OptionMapResult<U> {
+    const rv = def();
+    return (rv instanceof Promise
+      ? resultFrom(rv as Promise<Result<unknown, unknown>>)
+      : rv) as OptionMapResult<U>;
+  }
+
   mapOrElse<U>(
     def: () => U,
     _: (some: T) => U,
   ): OptionMapOrElse<U> {
-    const rv = def();
-    return (rv instanceof Promise
-      ? optionFrom(rv as Promise<Option<unknown>>)
-      : rv) as OptionMapOrElse<U>;
-  }
-
-  mapOrElsePromise<U>(
-    def: () => U,
-    _: (some: T) => U,
-  ): OptionMapOrElsePromise<U> {
-    const rv = def();
-    return (rv instanceof Promise
-      ? rv
-      : Promise.resolve(rv)) as OptionMapOrElsePromise<U>;
+    return def() as OptionMapOrElse<U>;
   }
 
   andThen<U>(fn: (some: T) => OptionPromise<U>): OptionPromise<U>;

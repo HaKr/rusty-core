@@ -149,7 +149,7 @@ Deno.test("option promises", async () => {
   assertEquals(
     await None<number>()
       .orElse(async () => await Promise.resolve(None()))
-      .mapOrElsePromise(
+      .mapOrElse(
         async () => await Promise.resolve(333),
         async (n) => await Promise.resolve(n * 2),
       )
@@ -202,7 +202,7 @@ Deno.test("option take", () => {
 });
 
 Deno.test("option combined with result", async () => {
-  const a = await Some("hello").mapOrElse<ResultPromise<boolean, string>>(
+  const a = await Some("hello").mapResult<ResultPromise<boolean, string>>(
     () => OkPromise<boolean, string>(false),
     () => OkPromise<boolean, string>(true),
   );

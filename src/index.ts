@@ -10,10 +10,20 @@ export {
 export type { Result, ResultPromise } from "./result/api.ts";
 export { Err, ErrPromise, Ok, OkPromise, resultFrom } from "./result/api.ts";
 export type {
+  OptionLike,
+  OptionMapOption,
   OptionMapOrElse,
-  OptionMapOrElsePromise,
+  OptionMapResult,
+  OptionPromiseLike,
+  OptionPromiseMapOption,
   OptionPromiseMapOrElse,
+  OptionPromiseMapResult,
+  ResultLike,
+  ResultMapOption,
   ResultMapOrElse,
-  ResultMapOrElsePromise,
+  ResultMapResult,
+  ResultPromiseLike,
+  ResultPromiseMapOption,
   ResultPromiseMapOrElse,
+  ResultPromiseMapResult,
 } from "./conditional_types.ts";

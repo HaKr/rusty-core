@@ -2,9 +2,16 @@ import {
   assert,
   assertEquals,
 } from "https://deno.land/std@0.170.0/testing/asserts.ts";
-import { None, Option, Some } from "../src/option/api.ts";
 
-import { Err, Ok, type Result, resultFrom } from "../src/result/api.ts";
+import {
+  Err,
+  None,
+  Ok,
+  Option,
+  type Result,
+  resultFrom,
+  Some,
+} from "../src/index.ts";
 
 Deno.test("result predicates", () => {
   assert(Ok(42).isOk());
@@ -63,7 +70,7 @@ Deno.test("result mapOrElse is different", async () => {
   assertEquals(
     await Ok(12)
       .andThen(async (n) => await Promise.resolve(Ok(n * 4 - 6)))
-      .mapOrElse(() => Err<string, string>("nope"), (nr) => Ok(`[${nr}]`)),
+      .mapResult(() => Err<string, string>("nope"), (nr) => Ok(`[${nr}]`)),
     Ok("[42]"),
   );
 });

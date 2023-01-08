@@ -6,31 +6,31 @@ Some(12)
     None<number>,
     (some) => Some(some + 1),
   )
-  .mapOrElse(
+  .mapOption(
     NonePromise<number>,
     (some) => SomePromise(some * 2),
   )
-  .mapOrElse(
+  .mapOption(
     NonePromise<number>,
     (some) => SomePromise(some * 3),
-  ).mapOrElse(
+  ).mapOption(
     None<number>,
     (some) => Some<number>(some * 4),
   )
-  .mapOrElse(
+  .mapOption(
     () => Promise.resolve(None<number>()),
     (n) => Promise.resolve(Some<number>(n * 5)),
   )
-  .mapOrElse(
+  .mapOption(
     NonePromise<number>,
     (some) => SomePromise<number>(some * 6),
   )
-  .mapOrElsePromise(
+  .mapOrElse(
     () => 0,
     (n) => n,
   ).then((y) =>
     Some(y).okOrElse(() => "nothing found")
-      .mapOrElse(
+      .mapResult(
         (err) => console.error("Failed: ", err),
         (ok) => console.log("Success: ", ok, (12 + 1) * 2 * 3 * 4 * 5 * 6),
       )
@@ -41,27 +41,27 @@ Ok<number, string>(42)
     Err<number, string>,
     (n) => Ok(n + 1),
   )
-  .mapOrElse(
+  .mapResult(
     ErrPromise<number, string>,
     (n) => OkPromise<number, string>(n * 2),
   )
-  .mapOrElse(
+  .mapResult(
     ErrPromise<number, string>,
     (n) => OkPromise<number, string>(n * 3),
   )
-  .mapOrElse(
+  .mapResult(
     Err<number, string>,
     (ok) => Ok(ok * 4),
   )
-  .mapOrElse(
+  .mapResult(
     (err) => Promise.resolve(Err<number, string>(err)),
     (ok) => Promise.resolve(Ok(ok * 5)),
   )
-  .mapOrElse(
+  .mapResult(
     ErrPromise<number, string>,
     async (n) => await OkPromise<number, string>(n * 6),
   )
-  .mapOrElsePromise(
+  .mapResult(
     () => 0,
     (n) => n,
   ).then((y) =>
