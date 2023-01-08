@@ -6,7 +6,7 @@ Option and Result as inspired by https://doc.rust-lang.org/stable/core
 
 ```json
 "dependencies": {
-	"rusty-core": "1.2.1"
+	"rusty-core": "2.0.3"
 }
 ```
 
