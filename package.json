@@ -1,6 +1,6 @@
 {
   "name": "rusty-core",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Option and Result as inspired by https://doc.rust-lang.org/stable/core",
   "main": "lib/index.js",
   "type": "commonjs",
@@ -28,7 +28,7 @@
   "homepage": "https://github.com/HaKr/rusty-core#readme",
   "mocha": {
     "require": "ts-node/register",
-    "spec": "./test/**/*.spec.ts",
+    "spec": "./test/*.ts",
     "extension": [
       "ts"
     ]

@@ -1,7 +1,5 @@
-import {
-  assert,
-  assertEquals,
-} from "https://deno.land/std@0.170.0/testing/asserts.ts";
+import assert from "node:assert/strict";
+
 import {
   Err,
   ErrPromise,
@@ -9,7 +7,7 @@ import {
   OkPromise,
   Result,
   ResultPromise,
-} from "../src/index.ts";
+} from "../src/index";
 
 import {
   NonePromise,
@@ -17,9 +15,9 @@ import {
   OptionPromise,
   Some,
   SomePromise,
-} from "../src/option/api.ts";
-import { OptionValue, PromisedOption } from "../src/option/option.ts";
-import { PromisedResult } from "../src/result/result.ts";
+} from "../src/option/api";
+import { OptionValue, PromisedOption } from "../src/option/option";
+import { PromisedResult } from "../src/result/result";
 
 function promisify<T>(arg: T) {
   return Promise.resolve(arg);
@@ -331,7 +329,7 @@ function asThenable(v: ExpectedValue, expected: Expectation): Thenable {
 
 function check(actual: ExpectedValue, expected: Expectation) {
   if (typeof expected == "function") expected(actual);
-  else assertEquals(actual, expected);
+  else assert.deepStrictEqual(actual, expected);
 }
 
 function taskRunner(
@@ -378,5 +376,5 @@ function taskRunner(
 
 let ms = 101;
 for (const taskName in tasks) {
-  Deno.test(taskName, async () => await taskRunner(ms++, tasks[taskName]));
+  it(taskName, async () => await taskRunner(ms++, tasks[taskName]));
 }

@@ -1,19 +1,17 @@
-import {
-  assert,
-  assertEquals,
-} from "https://deno.land/std@0.170.0/testing/asserts";
+import assert from "node:assert/strict";
+
 import { None, Option, Some } from "../src/option/api";
 
 import { Err, Ok, type Result, resultFrom } from "../src/result/api";
 
-Deno.test("result predicates", () => {
+it("result predicates", () => {
   assert(Ok(42).isOk());
   assert(!Ok(42).isErr());
   assert(!Err(42).isOk());
   assert(Err(42).isErr());
 });
 
-Deno.test("result andThen", () => {
+it("result andThen", () => {
   function checkedMultiply(x: number, y: number): Option<number> {
     return (y < 1_000_000) ? Some(x * y) : None();
   }
@@ -21,16 +19,19 @@ Deno.test("result andThen", () => {
     return checkedMultiply(x, x).map((sq) => `${sq}`).okOr("overflowed");
   }
 
-  assertEquals(Ok(2).andThen(sqThenToString), Ok("4"));
-  assertEquals(Ok(1_000_000).andThen(sqThenToString), Err("overflowed"));
-  assertEquals(
+  assert.deepStrictEqual(Ok(2).andThen(sqThenToString), Ok("4"));
+  assert.deepStrictEqual(
+    Ok(1_000_000).andThen(sqThenToString),
+    Err("overflowed"),
+  );
+  assert.deepStrictEqual(
     Err<number, string>("not a number").andThen(sqThenToString),
     Err<string, string>("not a number"),
   );
 });
 
-Deno.test("result promises", async () => {
-  assertEquals(
+it("result promises", async () => {
+  assert.deepStrictEqual(
     await Ok(12)
       .andThen(async (n) => await Promise.resolve(Ok(n * 4 - 6)))
       .map((nr) => `${nr}`)
@@ -39,8 +40,8 @@ Deno.test("result promises", async () => {
   );
 });
 
-Deno.test("result promise chaining", async () => {
-  assertEquals(
+it("result promise chaining", async () => {
+  assert.deepStrictEqual(
     await Ok(12)
       .andThen(async (n) => await resultFrom(Promise.resolve(Ok(n * 4 - 6))))
       .map((nr) => `${nr}`)
@@ -50,7 +51,7 @@ Deno.test("result promise chaining", async () => {
   function modify(n: number) {
     return resultFrom(Promise.resolve(Ok(n + 1)));
   }
-  assertEquals(
+  assert.deepStrictEqual(
     await Ok(12)
       .andThen(modify)
       .map((nr) => `${nr}`)
@@ -59,8 +60,8 @@ Deno.test("result promise chaining", async () => {
   );
 });
 
-Deno.test("result mapOrElse is different", async () => {
-  assertEquals(
+it("result mapOrElse is different", async () => {
+  assert.deepStrictEqual(
     await Ok(12)
       .andThen(async (n) => await Promise.resolve(Ok(n * 4 - 6)))
       .mapOrElse(() => Err<string, string>("nope"), (nr) => Ok(`[${nr}]`)),
@@ -68,19 +69,22 @@ Deno.test("result mapOrElse is different", async () => {
   );
 });
 
-Deno.test("for o of Result", () => {
+it("for o of Result", () => {
   let n = 0;
   for (const opt of Err<number, string>("nope")) {
     n += opt;
   }
-  assertEquals(n, 0);
+  assert.deepStrictEqual(n, 0);
   for (const opt of Ok(15)) {
     n += opt;
   }
-  assertEquals(n, 15);
+  assert.deepStrictEqual(n, 15);
 });
 
-Deno.test("result mapErr", () => {
-  assertEquals(Err(41).mapErr((err) => `${err + 2}`), Err("43"));
-  assertEquals(Ok<number, number>(41).mapErr((err) => `${err + 2}`), Ok(41));
+it("result mapErr", () => {
+  assert.deepStrictEqual(Err(41).mapErr((err) => `${err + 2}`), Err("43"));
+  assert.deepStrictEqual(
+    Ok<number, number>(41).mapErr((err) => `${err + 2}`),
+    Ok(41),
+  );
 });

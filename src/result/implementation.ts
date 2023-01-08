@@ -3,7 +3,7 @@ import {
   ResultMapOrElse,
   ResultMapResult,
 } from "../conditional_types";
-import { None, type Option, optionFrom, Some } from "../option/mod.ts";
+import { None, type Option, optionFrom, Some } from "../option/mod";
 import type { Result, ResultPromise } from "./api";
 import {
   Err,
