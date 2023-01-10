@@ -1,4 +1,5 @@
 import type {
+  ResultFrom,
   ResultMapOption,
   ResultMapOrElse,
   ResultMapResult,
@@ -8,7 +9,7 @@ import type {
 } from "../conditional_types";
 import { optionFrom } from "../option/api";
 import type { Option, OptionPromise } from "../option/api";
-import type { Result, ResultPromise } from "./api";
+import { isResult, Result, resultFrom, ResultPromise } from "./api";
 import { ErrValue, OkValue } from "./implementation";
 
 export function Ok<T, E>(value: T): Result<T, E> {
@@ -17,12 +18,6 @@ export function Ok<T, E>(value: T): Result<T, E> {
 
 export function Err<T, E>(err: E): Result<T, E> {
   return ResultValue.from(new ErrValue<T, E>(err));
-}
-
-export function resultFrom<T, E>(
-  from: Promise<Result<T, E>>,
-): ResultPromise<T, E> {
-  return from instanceof PromisedResult ? from : PromisedResult.from(from);
 }
 
 export interface UnwrapableResult<T, E> extends Result<T, E> {
@@ -143,9 +138,15 @@ export class ResultValue<T, E> implements Result<T, E>, UnwrapableResult<T, E> {
 }
 
 export class PromisedResult<T, E> implements ResultPromise<T, E> {
+  private promise: Promise<Result<T, E>>;
+
   constructor(
-    private promise: Promise<Result<T, E>>,
-  ) {}
+    promise: Promise<Result<T, E>>,
+  ) {
+    this.promise = promise.then((resolved) =>
+      isResult<T, E>(resolved) ? resolved : resultFrom(resolved)
+    );
+  }
 
   get [Symbol.toStringTag](): string {
     return `PromisedResult`; //this.promise[Symbol.toStringTag];
@@ -182,7 +183,7 @@ export class PromisedResult<T, E> implements ResultPromise<T, E> {
   }
 
   and<U>(res: Result<U, E>): ResultPromise<U, E> {
-    return resultFrom<U, E>(
+    return resultFrom(
       this.promise.then((result) => result.and(res)),
     );
   }

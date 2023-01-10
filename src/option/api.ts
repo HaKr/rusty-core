@@ -1,12 +1,14 @@
 import type {
+  OptionFrom,
   OptionPromiseMapOption,
   OptionPromiseMapOrElse,
   OptionPromiseMapResult,
 } from "../conditional_types";
-import type { ResultPromise } from "../result/api";
+import type { Result, ResultPromise } from "../result/api";
 import type { OptionCombinators } from "./combinators";
 import { NoneValue, SomeValue } from "./implementation";
 import { OptionValue, PromisedOption } from "./option";
+import { ResultValue } from "../result/result";
 
 export function Some<T>(value: T): Option<T> {
   return OptionValue.from(new SomeValue<T>(value));
@@ -21,22 +23,26 @@ export function None<T>(): Option<T> {
 }
 
 export function NonePromise<T>(): OptionPromise<T> {
-  return optionFrom(Promise.resolve(None()));
+  return optionFrom(Promise.resolve(None())) as OptionPromise<T>;
 }
 
-export function optionFrom<T>(from: Promise<Option<T>>): OptionPromise<T>;
-export function optionFrom<T>(from: T): Option<T>;
 export function optionFrom<T>(
-  from: undefined | null | number | unknown | Promise<Option<T>>,
-): OptionPromise<T> | Option<T> {
-  return from instanceof PromisedOption
+  from?: T | undefined | null,
+): OptionFrom<T> {
+  return (from instanceof PromisedOption
     ? from
+    : from instanceof SomeValue || from instanceof NoneValue
+    ? OptionValue.from(from)
     : from instanceof Promise
-    ? PromisedOption.create(from)
+    ? PromisedOption.from(from)
     : from === undefined || (typeof from == "object" && from == null) ||
         (typeof from == "number" && (Number.isNaN(from) || from == Infinity))
     ? None()
-    : Some(from as T);
+    : Some(from)) as OptionFrom<T>;
+}
+
+export function isOption<T>(opt: unknown): opt is Option<T> {
+  return opt instanceof OptionValue;
 }
 
 export interface Option<T> extends OptionCombinators<T> {
@@ -130,7 +136,6 @@ export interface OptionPromise<T> extends Promise<Option<T>> {
   /**
    * Maps an Option<T> to an Option<U> by applying a function to a contained value.
    */
-  map<U>(fn: (some: T) => Promise<U>): OptionPromise<U>;
   map<U>(fn: (some: T) => U): OptionPromise<U>;
 
   /**

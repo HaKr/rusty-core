@@ -1,4 +1,5 @@
 import type {
+  MapOption,
   OptionMapOption,
   OptionMapOrElse,
   OptionMapResult,
@@ -75,14 +76,14 @@ export class SomeValue<T> implements UnwrapableOption<T> {
   /**
    * Maps an Option<T> to Option<U> by applying a function to a contained value.
    */
-  map<U>(fn: (some: T) => Promise<U>): OptionPromise<U>;
-  map<U>(fn: (some: T) => U): U;
-  map<U>(fn: (some: T) => U | Promise<U>): Option<U> | OptionPromise<U> {
+  map<U>(
+    fn: (some: T) => U,
+  ): MapOption<U> {
     const newVal = fn(this.value);
 
-    return newVal instanceof Promise
+    return (newVal instanceof Promise
       ? optionFrom(newVal.then(Some))
-      : Some(newVal);
+      : Some(newVal)) as MapOption<U>;
   }
 
   mapOption<U>(
@@ -165,12 +166,10 @@ export class NoneValue<T> implements OptionCombinators<T>, UnwrapableOption<T> {
     return true;
   }
 
-  map<U>(fn: (some: T) => Promise<U>): OptionPromise<U>;
-  map<U>(fn: (some: T) => U): Option<U>;
   map<U>(
-    _: (val: T) => Option<U> | Promise<Option<U>>,
-  ): Option<U> | OptionPromise<U> {
-    return OptionValue.from(this as unknown as NoneValue<U>);
+    _: (val: T) => U,
+  ): MapOption<U> {
+    return OptionValue.from(this as unknown as NoneValue<U>) as MapOption<U>;
   }
 
   mapOption<U>(

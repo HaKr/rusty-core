@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 
-import { None, optionFrom, Some } from "../src/index";
+import { Err, None, Ok, optionFrom, Some } from "../src/index";
+import { ErrPromise, OkPromise } from "../src/result/api";
 
 it("option predicates", () => {
   assert(Some(42).isSome());
@@ -169,7 +170,7 @@ it("option unwrap", async () => {
   );
   assert.deepStrictEqual(
     await Some(42)
-      .map(async (n) => await Promise.resolve(n * n / n))
+      .map(async (n) => Promise.resolve(n * n / n))
       .unwrapOr(99),
     42,
   );
@@ -181,4 +182,69 @@ it("option take", () => {
   assert.deepStrictEqual(x, None());
   assert.deepStrictEqual(x.take(), None());
   assert.deepStrictEqual(x, None());
+});
+
+function promisify<T>(arg: T): Promise<T> {
+  return Promise.resolve(arg);
+}
+
+it("option from", async () => {
+  assert.deepStrictEqual(optionFrom(12), Some(12));
+  optionFrom(12).map((some) => assert.deepStrictEqual(some, 12));
+  assert.deepStrictEqual(optionFrom("forty-two"), Some("forty-two"));
+  assert.deepStrictEqual(optionFrom({ answer: 42 }), Some({ answer: 42 }));
+  assert.deepStrictEqual(optionFrom<{ answer: number }>(), None());
+  await optionFrom(promisify(12)).map((some) =>
+    assert.deepStrictEqual(some, 12)
+  );
+  await optionFrom(optionFrom(promisify(12))).map((some) =>
+    assert.deepStrictEqual(some, 12)
+  );
+  await optionFrom(optionFrom(optionFrom(promisify(12)))).map((some) =>
+    assert.deepStrictEqual(some, 12)
+  );
+  await optionFrom(optionFrom(optionFrom(promisify(1 / 0)))).map((some) =>
+    assert.fail("Should never be executed")
+  );
+  assert.deepStrictEqual(
+    await optionFrom(1 / 0).mapOrElse(
+      () => 99,
+      (some) => some,
+    ),
+    99,
+  );
+  assert.deepStrictEqual(
+    await optionFrom(promisify(1 / 0)).mapOrElse(
+      () => 42,
+      (some) => some,
+    ),
+    42,
+  );
+  assert.deepStrictEqual(
+    optionFrom(1 / 0).mapOrElse(
+      () => 99,
+      (some) => some,
+    ),
+    99,
+  );
+  assert.deepStrictEqual(
+    optionFrom(1 / 0).mapOrElse(
+      () => Ok<number, number>(99),
+      (some) => Err(some),
+    ),
+    Ok(99),
+  );
+
+  const p = optionFrom(1 / 0).mapResult(
+    () => OkPromise<number, number>(99),
+    (some) => ErrPromise(some),
+  );
+  await p.then((res) => assert.deepStrictEqual(res, Ok(99)));
+  await p.map((ok) => assert.deepStrictEqual(ok, 99));
+
+  optionFrom(promisify("forty-two")).map((some) =>
+    assert.deepStrictEqual(some, "forty-two")
+  );
+  assert.deepStrictEqual(optionFrom({ answer: 42 }), Some({ answer: 42 }));
+  assert.deepStrictEqual(optionFrom<{ answer: number }>(), None());
 });

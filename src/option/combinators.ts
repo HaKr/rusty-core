@@ -1,4 +1,5 @@
 import type {
+  MapOption,
   OptionMapOption,
   OptionMapOrElse,
   OptionMapResult,
@@ -46,8 +47,7 @@ export interface OptionCombinators<T> {
   /**
    * Maps an Option<T> to an Option<U> by applying a function to a contained value.
    */
-  map<U>(fn: (some: T) => Promise<U>): OptionPromise<U>;
-  map<U>(fn: (some: T) => U): Option<U>;
+  map<U>(fn: (some: T) => U): MapOption<U>;
 
   /**
    * Computes a default function result (if None), or applies a different function to the contained value (if Some).

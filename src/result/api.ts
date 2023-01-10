@@ -1,4 +1,5 @@
 import type {
+  ResultFrom,
   ResultMapOption,
   ResultMapOrElse,
   ResultMapResult,
@@ -15,7 +16,7 @@ export function Ok<T, E>(value: T): Result<T, E> {
 }
 
 export function OkPromise<T, E>(value: T): ResultPromise<T, E> {
-  return resultFrom(Promise.resolve(Ok(value)));
+  return resultFrom(Promise.resolve(Ok<T, E>(value)));
 }
 
 export function Err<T, E>(err: E): Result<T, E> {
@@ -23,13 +24,23 @@ export function Err<T, E>(err: E): Result<T, E> {
 }
 
 export function ErrPromise<T, E>(err: E): ResultPromise<T, E> {
-  return resultFrom(Promise.resolve(Err(err)));
+  return resultFrom(Promise.resolve(Err<T, E>(err)));
 }
 
-export function resultFrom<T, E>(
-  from: Promise<Result<T, E>>,
-): ResultPromise<T, E> {
-  return PromisedResult.from(from);
+export function resultFrom<T, E = T>(
+  from: T,
+): ResultFrom<T, E> {
+  return (from instanceof PromisedResult
+    ? from
+    : (from instanceof OkValue) || (from instanceof OkValue)
+    ? ResultValue.from(from)
+    : from instanceof Promise
+    ? PromisedResult.from(from)
+    : Ok<T, E>(from)) as ResultFrom<T, E>;
+}
+
+export function isResult<T, E>(opt: unknown): opt is Result<T, E> {
+  return opt instanceof ResultValue;
 }
 
 export interface Result<T, E> {
