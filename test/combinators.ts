@@ -1,8 +1,4 @@
 import {
-  assert,
-  assertEquals,
-} from "https://deno.land/std@0.170.0/testing/asserts.ts";
-import {
   Err,
   ErrPromise,
   Ok,
@@ -18,8 +14,46 @@ import {
   Some,
   SomePromise,
 } from "../src/option/api.ts";
-import { OptionValue, PromisedOption } from "../src/option/option.ts";
+import { PromisedOption } from "../src/option/option.ts";
 import { PromisedResult } from "../src/result/result.ts";
+import { assert, assertEquals, testCase } from "./deps.ts";
+
+type ExpectedValue =
+  | OptionPromise<unknown>
+  | Option<unknown>
+  | Result<unknown, unknown>
+  | ResultPromise<unknown, unknown>
+  | Promise<unknown>
+  | string
+  | number;
+type Expectation = ((v: ExpectedValue) => void | never) | ExpectedValue;
+type Task = {
+  action: (ms: Option<number>) => ExpectedValue;
+  /** Value expected to be returned from `action`, or a function to check the returned value with */
+  expected: Expectation;
+  /**
+   * Value expected to be passed to promise.then(), or a function to check it with
+   * if this value is omitted, the return from `action` may not be a promise like
+   */
+  expectedThen?: Expectation;
+  /**
+   * Value expected to be passed to option.map()/result.map(), or a function to check it with
+   * if this value is omitted, there may be no map function on the return from `action`
+   */
+  expectedMap?: Expectation;
+};
+
+function isPromise(p: unknown): p is Promise<unknown> {
+  return p instanceof Promise;
+}
+
+function isOptionPromise(p: unknown): p is OptionPromise<unknown> {
+  return p instanceof PromisedOption;
+}
+
+function isResultPromise(p: unknown): p is ResultPromise<unknown, unknown> {
+  return p instanceof PromisedResult;
+}
 
 function promisify<T>(arg: T) {
   return Promise.resolve(arg);
@@ -29,28 +63,9 @@ function sleep(ms: number): Promise<number> {
   return Promise.resolve(ms / 1_000.0);
 }
 
-type ExpectedValue =
-  | OptionPromise<number>
-  | OptionPromise<string>
-  | Option<string>
-  | Option<number>
-  | Result<number, number>
-  | ResultPromise<number, number>
-  | Promise<string>
-  | Promise<number>
-  | string
-  | number;
-type Expectation = ((v: ExpectedValue) => void | never) | ExpectedValue;
-type Task = {
-  fn: (ms: Option<number>) => ExpectedValue;
-  expected?: Expectation;
-  expectedThen?: Expectation;
-  expectedMap?: Expectation;
-};
-
 const tasks: { [key: string]: Task } = {
   "Option.mapOrElse to number": {
-    fn: (ms: Option<number>) => {
+    action: (ms: Option<number>) => {
       return ms.mapOrElse(
         () => 0,
         (ms) => ms,
@@ -59,78 +74,87 @@ const tasks: { [key: string]: Task } = {
     expected: 101,
   },
   "Option.mapOrElse to Option": {
-    fn: (ms: Option<number>) =>
+    action: (ms: Option<number>) =>
       ms.mapOrElse(
         () => Some(0),
         Some,
       ),
     expected: Some(102),
+    expectedMap: 102,
   },
-  "Option.mapOrElse to OptionPromise": {
-    fn: (ms: Option<number>) =>
-      ms.mapOrElse(
-        () => SomePromise(0),
-        async (ms) => Some(await sleep(ms)),
-      ),
-    expectedThen: Some(0.103),
-  },
+  "Option.mapOrElse to OptionPromise compile error: return type is Promise<Option>>, thus no combinators":
+    {
+      action: (ms: Option<number>) =>
+        ms.mapOrElse(
+          () => SomePromise(0),
+          async (ms) => Some(await sleep(ms)),
+        ),
+      expected: isPromise,
+      expectedThen: Some(0.103),
+    },
   "Option.mapOrElse to Promise": {
-    fn: (ms: Option<number>) =>
+    action: (ms: Option<number>) =>
       ms.mapOrElse(
         () => Promise.resolve(0),
         (ms) => Promise.resolve(ms),
       ),
-    expected: ((actual) => assert(actual instanceof Promise)),
+    expected: isPromise,
     expectedThen: 104,
   },
 
   "OptionPromise.mapOrElse to number": {
-    fn: (ms: Option<number>) => {
+    action: (ms: Option<number>) => {
       return ms.map(promisify).mapOrElse(
         () => 0,
         (ms) => ms,
       );
     },
+    expected: isPromise,
     expectedThen: 105,
   },
-  "OptionPromise.mapOrElse to Option": {
-    fn: (ms: Option<number>) =>
-      ms.map(promisify).mapOrElse(
-        () => Some(0),
-        Some,
-      ),
-    expected: ((actual) => assert(actual instanceof Promise)),
-    expectedThen: Some(106),
-  },
-  "OptionPromise.mapOrElse to OptionPromise": {
-    fn: (ms: Option<number>) =>
-      ms.map(promisify).mapOrElse(
-        () => SomePromise(0),
-        async (ms) => Some(await sleep(ms)),
-      ),
-    expectedThen: Some(0.107),
-  },
+  "OptionPromise.mapOrElse to Option: compile warning as return type is Promise<Option>>, thus no combinators":
+    {
+      action: (ms: Option<number>) =>
+        ms.map(promisify).mapOrElse(
+          () => Some(0),
+          Some,
+        ),
+      expected: isPromise,
+      expectedThen: Some(106),
+    },
+  "OptionPromise.mapOrElse to OptionPromise: compile warning as return type is Promise<OptionPromise>>, thus no combinators":
+    {
+      action: (ms: Option<number>) =>
+        ms.map(promisify).mapOrElse(
+          () => SomePromise(0),
+          async (ms) => Some(await sleep(ms)),
+        ),
+      expected: isOptionPromise,
+      expectedThen: Some(0.107),
+    },
   "OptionPromise.mapOrElse to Promise": {
-    fn: (ms: Option<number>) =>
+    action: (ms: Option<number>) =>
       ms.map(promisify).mapOrElse(
         () => Promise.resolve(0),
         (ms) => Promise.resolve(ms),
       ),
-    expected: ((actual) => assert(actual instanceof Promise)),
+    expected: isPromise,
     expectedThen: 108,
   },
+
   "Option.mapOption to OptionPromise": {
-    fn: (ms: Option<number>) =>
+    action: (ms: Option<number>) =>
       ms.mapOption(
         () => SomePromise(0),
         async (ms) => Some(await sleep(ms)),
       ),
-    expectedThen: (v: ExpectedValue) => assert(v instanceof OptionValue),
+    expected: isOptionPromise,
+    expectedThen: Some(0.109),
     expectedMap: 0.109,
   },
 
   "Option.mapOption to number": {
-    fn: (ms: Option<number>) => {
+    action: (ms: Option<number>) => {
       return ms.mapOption(
         () => 0,
         (ms) => ms,
@@ -140,64 +164,70 @@ const tasks: { [key: string]: Task } = {
   },
 
   "Option.mapOption to Option": {
-    fn: (ms: Option<number>) =>
+    action: (ms: Option<number>) =>
       ms.mapOption(
         () => Some(0),
         Some,
       ),
     expected: Some(111),
+    expectedMap: 111,
   },
   "Option.mapOption to Promise": {
-    fn: (ms: Option<number>) =>
+    action: (ms: Option<number>) =>
       ms.mapOption(
         () => Promise.resolve(0),
         (ms) => Promise.resolve(ms),
       ),
-    // Illogical combination: OptionPromise returned, but resolves to number, not Option<number>
-    // Type inference wil show a string as warning
-    expected: ((actual) => assert(actual instanceof PromisedOption)),
-    expectedThen: 112,
+    expected: isOptionPromise,
+    expectedThen: Some(112),
+    expectedMap: 112,
   },
   "OptionPromise.mapOption to OptionPromise": {
-    fn: (ms: Option<number>) =>
+    action: (ms: Option<number>) =>
       ms.map(promisify).mapOption(
         () => SomePromise(0),
         async (ms) => Some(await sleep(ms)),
       ),
-    expectedThen: (v: ExpectedValue) => assert(v instanceof OptionValue),
+    expected: isOptionPromise,
+    expectedThen: Some(0.113),
     expectedMap: 0.113,
   },
 
   "OptionPromise.mapOption to number": {
-    fn: (ms: Option<number>) => {
+    action: (ms: Option<number>) => {
       return ms.map(promisify).mapOption(
         () => 0,
         (ms) => ms,
       );
     },
-    expectedThen: 114,
+    expected: isOptionPromise,
+    expectedThen: Some(114),
+    expectedMap: 114,
   },
 
   "OptionPromise.mapOption to Option": {
-    fn: (ms: Option<number>) =>
+    action: (ms: Option<number>) =>
       ms.map(promisify).mapOption(
         () => Some(0),
         Some,
       ),
+    expected: isOptionPromise,
+    expectedThen: Some(115),
     expectedMap: 115,
   },
   "OptionPromise.mapOption to Promise": {
-    fn: (ms: Option<number>) =>
+    action: (ms: Option<number>) =>
       ms.map(promisify).mapOption(
         () => Promise.resolve(0),
         (ms) => Promise.resolve(ms),
       ),
-    expected: ((actual) => assert(actual instanceof PromisedOption)),
-    expectedThen: 116,
+    expected: isOptionPromise,
+    expectedThen: Some(116),
+    expectedMap: 116,
   },
 
   "Option.mapResult to number": {
-    fn: (ms: Option<number>) => {
+    action: (ms: Option<number>) => {
       return ms.mapResult(
         () => 0,
         (ms) => ms,
@@ -205,102 +235,148 @@ const tasks: { [key: string]: Task } = {
     },
     expected: 117,
   },
-  "Option.mapResult to Option": {
-    fn: (ms: Option<number>) =>
+  "Option.mapResult to Option: weird, but allowed": {
+    action: (ms: Option<number>) =>
       ms.mapResult(
         () => Some(0),
         Some,
       ),
+    expected: Some(118),
     expectedMap: 118,
   },
   "Option.mapResult to Result": {
-    fn: (ms: Option<number>) =>
+    action: (ms: Option<number>) =>
       ms.mapResult(
-        () => Err(0),
+        () => Err<number, number>(0),
         Ok<number, number>,
       ),
     expected: Ok(119),
     expectedMap: 119,
   },
   "Option.mapResult to ResultPromise": {
-    fn: (ms: Option<number>) =>
+    action: (ms: Option<number>) =>
       ms.mapResult(
         () => ErrPromise(0),
         OkPromise<number, number>,
       ),
+    expected: isResultPromise,
     expectedThen: Ok(120),
     expectedMap: 120,
   },
-  "Option.mapResult to OptionPromise": {
-    fn: (ms: Option<number>) =>
-      ms.mapResult(
-        () => NonePromise(),
-        SomePromise,
-      ),
-    expectedThen: Some(121),
-    expectedMap: 121,
-  },
+  "Option.mapResult to OptionPromise compile error: mapResult combinators would expect Result, not Option":
+    {
+      action: (ms: Option<number>) =>
+        ms.mapResult(
+          () => NonePromise(),
+          SomePromise,
+        ),
+      expected: isOptionPromise,
+      expectedThen: Some(121),
+      expectedMap: 121,
+    },
   "Option.mapResult to Promise": {
-    fn: (ms: Option<number>) =>
+    action: (ms: Option<number>) =>
       ms.mapResult(
         () => Promise.resolve(""),
         (some) => Promise.resolve(`${some}`),
       ),
-    expected: ((rv) => assert(rv instanceof PromisedResult)),
-    expectedThen: "122",
+    expected: isResultPromise,
+    expectedThen: Ok("122"),
+    expectedMap: "122",
   },
   "OptionPromise.mapResult to number": {
-    fn: (ms: Option<number>) => {
+    action: (ms: Option<number>) => {
       return ms.map(promisify).mapResult(
         () => 0,
         (ms) => ms,
       );
     },
-    expectedThen: 123,
+    expected: isResultPromise,
+    expectedThen: Ok(123),
+    expectedMap: 123, // to here
   },
-  "OptionPromise.mapResult to Option": {
-    fn: (ms: Option<number>) =>
-      ms.map(promisify).mapResult(
-        () => Some(0),
-        Some,
-      ),
-    expectedThen: Some(124),
-  },
+  "OptionPromise.mapResult to Option: compiler warning mapResult combinators would expect Result, not Option":
+    {
+      action: (ms: Option<number>) =>
+        ms.map(promisify).mapResult(
+          () => Some(0),
+          Some,
+        ),
+      expected: isOptionPromise,
+      expectedThen: Ok(Some(124)),
+      expectedMap: Some(124),
+    },
   "OptionPromise.mapResult to Result": {
-    fn: (ms: Option<number>) =>
+    action: (ms: Option<number>) =>
       ms.map(promisify).mapResult(
         () => Err(0),
         Ok<number, number>,
       ),
+    expected: isResultPromise,
     expectedThen: Ok(125),
     expectedMap: 125,
   },
   "OptionPromise.mapResult to ResultPromise": {
-    fn: (ms: Option<number>) =>
+    action: (ms: Option<number>) =>
       ms.map(promisify).mapResult(
         () => ErrPromise<number, number>(0),
         OkPromise<number, number>,
       ),
+    expected: isResultPromise,
     expectedThen: Ok(126),
     expectedMap: 126,
   },
-  "OptionPromise.mapResult to OptionPromise": {
-    fn: (ms: Option<number>) =>
-      ms.map(promisify).mapResult(
-        () => NonePromise(),
-        SomePromise,
-      ),
-    expectedThen: Some(127),
-    expectedMap: 127,
-  },
+  "OptionPromise.mapResult to OptionPromise: compiler warning mapResult combinators would expect Result, not Option":
+    {
+      action: (ms: Option<number>) =>
+        ms.map(promisify).mapResult(
+          () => NonePromise(),
+          SomePromise,
+        ),
+      expected: isResultPromise,
+      expectedThen: Ok(Some(127)),
+      expectedMap: Some(127),
+    },
   "OptionPromise.mapResult to Promise": {
-    fn: (ms: Option<number>) =>
+    action: (ms: Option<number>) =>
       ms.map(promisify).mapResult(
         () => Promise.resolve(""),
         (some) => Promise.resolve(`${some}`),
       ),
-    expected: ((rv) => assert(rv instanceof PromisedResult)),
-    expectedThen: "128",
+    expected: isResultPromise,
+    expectedThen: Ok("128"),
+    expectedMap: "128",
+  },
+  "Option.mapOption to ResultPromise: compile warning as combinators would expect Option, not Result":
+    {
+      action: (ms: Option<number>) =>
+        ms.mapOption(
+          () => OkPromise<number, number>(0),
+          async (ms) => ErrPromise(await sleep(ms)),
+        ),
+      expected: isResultPromise,
+      expectedThen: Some(Err(0.129)),
+      expectedMap: Err(0.129),
+    },
+  "OptionPromise.mapOption to ResultPromise: compile warning as combinators would expect Option, not Result":
+    {
+      action: (ms: Option<number>) =>
+        ms.map(promisify).mapOption(
+          () => OkPromise<number, number>(0),
+          async (ms) => ErrPromise(await sleep(ms)),
+        ),
+      expected: isResultPromise,
+      expectedThen: Some(Err(0.13)),
+      expectedMap: Err(0.13),
+    },
+  "Option.mapOption to Result: weird, but allowed": {
+    action: (ms: Option<number>) =>
+      ms.mapOption(
+        () => Ok(0),
+        Ok,
+      ),
+    expected: Ok(131),
+    expectedMap: 131,
   },
 };
 
@@ -336,6 +412,7 @@ function check(actual: ExpectedValue, expected: Expectation) {
 
 function taskRunner(
   ms: number,
+  taskName: string,
   task: Task,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -345,9 +422,8 @@ function taskRunner(
     const noMap = expectedMap == undefined;
 
     try {
-      const rv = task.fn(Some(ms));
-      if (task.expected !== undefined) check(rv, task.expected);
-      if (noThen && noMap) resolve();
+      const rv = task.action(Some(ms));
+      check(rv, task.expected);
 
       if (expectedThen !== undefined) {
         asThenable(rv, expectedThen).then((actual) => {
@@ -359,7 +435,10 @@ function taskRunner(
 
           if (noMap) resolve();
         });
+      } else {
+        assertEquals((rv as Thenable).then, undefined);
       }
+
       if (expectedMap !== undefined) {
         asMapable(rv, expectedMap).map((actual) => {
           try {
@@ -369,14 +448,19 @@ function taskRunner(
           }
           resolve();
         });
+      } else {
+        assertEquals((rv as Mapable).map, undefined);
       }
+      if (noThen && noMap) resolve();
     } catch (e) {
       reject(e);
     }
   });
 }
 
-let ms = 101;
+let ix = 101, ms = 101;
 for (const taskName in tasks) {
-  Deno.test(taskName, async () => await taskRunner(ms++, tasks[taskName]));
+  testCase(`${ix++}-${taskName}`, async () => {
+    await taskRunner(ms++, taskName, tasks[taskName]);
+  });
 }

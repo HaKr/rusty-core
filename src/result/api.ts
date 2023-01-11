@@ -1,35 +1,54 @@
 import type {
+  ErrFrom,
+  OkFrom,
+  ResultLike,
   ResultMapOption,
   ResultMapOrElse,
   ResultMapResult,
+  ResultPromiseLike,
   ResultPromiseMapOption,
   ResultPromiseMapOrElse,
   ResultPromiseMapResult,
 } from "../conditional_types.ts";
 import { type Option, OptionPromise } from "../option/mod.ts";
 import { ErrValue, OkValue } from "./implementation.ts";
-import { PromisedResult, ResultValue } from "./result.ts";
+import { PromisedResult, ResultValue, UnwrapableResult } from "./result.ts";
 
-export function Ok<T, E>(value: T): Result<T, E> {
-  return ResultValue.from(new OkValue<T, E>(value));
+export function Ok<T, E>(ok?: T): OkFrom<T, E> {
+  return (
+    (ok instanceof PromisedResult || ok instanceof ResultValue)
+      ? ok
+      : (ok instanceof OkValue) || (ok instanceof ErrValue)
+      ? ResultValue.from(ok)
+      : ok instanceof Promise
+      ? PromisedResult.from(ok)
+      : ResultValue.from(OkValue.from(ok) as UnwrapableResult<T, E>)
+  ) as OkFrom<T, E>;
 }
 
 export function OkPromise<T, E>(value: T): ResultPromise<T, E> {
-  return resultFrom(Promise.resolve(Ok(value)));
+  return Ok(Promise.resolve(value)) as ResultPromise<T, E>;
 }
 
-export function Err<T, E>(err: E): Result<T, E> {
-  return ResultValue.from(new ErrValue<T, E>(err));
+export function Err<T, E>(err?: E): ErrFrom<T, E> {
+  return ((err instanceof ResultValue || err instanceof PromisedResult)
+    ? err
+    : (err instanceof OkValue) || (err instanceof ErrValue)
+    ? ResultValue.from(err)
+    : err instanceof Promise
+    ? PromisedResult.from(err, Err)
+    : ResultValue.from(ErrValue.from(err) as ResultValue<T, E>)) as ErrFrom<
+      T,
+      E
+    >;
 }
 
 export function ErrPromise<T, E>(err: E): ResultPromise<T, E> {
-  return resultFrom(Promise.resolve(Err(err)));
+  return Err(Promise.resolve(err)) as unknown as ResultPromise<T, E>;
 }
 
-export function resultFrom<T, E>(
-  from: Promise<Result<T, E>>,
-): ResultPromise<T, E> {
-  return PromisedResult.from(from);
+export function isResult<T, E>(opt: unknown): opt is Result<T, E> {
+  return opt instanceof ResultValue;
 }
 
 export interface Result<T, E> {
@@ -48,7 +67,7 @@ export interface Result<T, E> {
    *
    * This function can be used for control flow based on Result values.
    */
-  andThen<U>(op: (some: T) => Promise<Result<U, E>>): ResultPromise<U, E>;
+  andThen<U>(op: (some: T) => ResultPromiseLike<U, E>): ResultPromise<U, E>;
   andThen<U>(op: (some: T) => Result<U, E>): Result<U, E>;
 
   /**
@@ -162,8 +181,7 @@ export interface ResultPromise<T, E> extends Promise<Result<T, E>> {
    *
    * This function can be used for control flow based on Result values.
    */
-  andThen<U>(op: (some: T) => Promise<Result<U, E>>): ResultPromise<U, E>;
-  andThen<U>(op: (some: T) => Result<U, E>): ResultPromise<U, E>;
+  andThen<U>(op: (some: T) => ResultLike<U, E>): ResultPromise<U, E>;
 
   /**
    * Converts from Result<T, E> to Option<E>.

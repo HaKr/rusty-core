@@ -1,4 +1,5 @@
 import type {
+  OptionFrom,
   OptionPromiseMapOption,
   OptionPromiseMapOrElse,
   OptionPromiseMapResult,
@@ -8,35 +9,35 @@ import type { OptionCombinators } from "./combinators.ts";
 import { NoneValue, SomeValue } from "./implementation.ts";
 import { OptionValue, PromisedOption } from "./option.ts";
 
-export function Some<T>(value: T): Option<T> {
-  return OptionValue.from(new SomeValue<T>(value));
-}
-
 export function SomePromise<T>(value: T): OptionPromise<T> {
-  return optionFrom(Promise.resolve(Some(value)));
+  return Some(Promise.resolve(value)) as OptionPromise<T>;
 }
 
 export function None<T>(): Option<T> {
-  return OptionValue.from(new NoneValue<T>());
+  return Some() as Option<T>;
 }
 
 export function NonePromise<T>(): OptionPromise<T> {
-  return optionFrom(Promise.resolve(None()));
+  return Some(Promise.resolve()) as OptionPromise<T>;
 }
 
-export function optionFrom<T>(from: Promise<Option<T>>): OptionPromise<T>;
-export function optionFrom<T>(from: T): Option<T>;
-export function optionFrom<T>(
-  from: undefined | null | number | unknown | Promise<Option<T>>,
-): OptionPromise<T> | Option<T> {
-  return from instanceof PromisedOption
-    ? from
-    : from instanceof Promise
-    ? PromisedOption.create(from)
-    : from === undefined || (typeof from == "object" && from == null) ||
-        (typeof from == "number" && (Number.isNaN(from) || from == Infinity))
-    ? None()
-    : Some(from as T);
+export function Some<T>(
+  value?: T | undefined | null,
+): OptionFrom<T> {
+  return (value instanceof PromisedOption || value instanceof OptionValue
+    ? value
+    : value instanceof SomeValue || value instanceof NoneValue
+    ? OptionValue.from(value)
+    : value instanceof Promise
+    ? PromisedOption.from(value)
+    : value === undefined || (typeof value == "object" && value == null) ||
+        (typeof value == "number" && (Number.isNaN(value) || value == Infinity))
+    ? OptionValue.from(new NoneValue<T>())
+    : OptionValue.from(new SomeValue<T>(value))) as OptionFrom<T>;
+}
+
+export function isOption<T>(opt: unknown): opt is Option<T> {
+  return opt instanceof OptionValue;
 }
 
 export interface Option<T> extends OptionCombinators<T> {
@@ -130,7 +131,6 @@ export interface OptionPromise<T> extends Promise<Option<T>> {
   /**
    * Maps an Option<T> to an Option<U> by applying a function to a contained value.
    */
-  map<U>(fn: (some: T) => Promise<U>): OptionPromise<U>;
   map<U>(fn: (some: T) => U): OptionPromise<U>;
 
   /**

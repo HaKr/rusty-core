@@ -1,33 +1,26 @@
-import {
-  assert,
-  assertEquals,
-  assertNotEquals,
-} from "https://deno.land/std@0.170.0/testing/asserts.ts";
-import {
-  None,
-  Ok,
-  OkPromise,
-  optionFrom,
-  ResultPromise,
-  Some,
-} from "../src/index.ts";
+import { assert, assertEquals, testCase } from "./deps.ts";
 
-Deno.test("option predicates", () => {
+import { Err, ErrPromise, None, Ok, OkPromise, Some } from "../src/index.ts";
+
+testCase("option predicates", () => {
   assert(Some(42).isSome());
   assert(!None().isSome());
   assert(!Some(42).isNone());
   assert(None().isNone());
 });
 
-Deno.test("some map", async () => {
-  assertEquals(Some(1).map((some) => `${some + 1} two`), Some("2 two"));
+testCase("some map", async () => {
+  assertEquals(
+    Some(1).map((some) => `${some + 1} two`),
+    Some("2 two"),
+  );
   assertEquals(
     await Some(42).map((some) => Promise.resolve(some + 291)),
     Some(333),
   );
 });
 
-Deno.test("none_map", async () => {
+testCase("none_map", async () => {
   assertEquals(None<number>().map((three) => `${three} two`), None());
   assertEquals(
     await None<number>().map((some) => Promise.resolve(some + 291)),
@@ -35,7 +28,7 @@ Deno.test("none_map", async () => {
   );
 });
 
-Deno.test("some andThen", async () => {
+testCase("some andThen", async () => {
   assertEquals(
     Some(1).andThen((some) => Some(`${some + 1} two`)),
     Some("2 two"),
@@ -46,15 +39,18 @@ Deno.test("some andThen", async () => {
   );
 });
 
-Deno.test("none_andThen", async () => {
-  assertEquals(None<number>().andThen((none) => Some(`${none} two`)), None());
+testCase("none_andThen", async () => {
+  assertEquals(
+    None<number>().andThen((none) => Some(`${none} two`)),
+    None(),
+  );
   assertEquals(
     await None<number>().andThen((none) => Promise.resolve(Some(none + 291))),
     None(),
   );
 });
 
-Deno.test("option_filter", () => {
+testCase("option_filter", () => {
   const is_even = (n: number) => n % 2 == 0;
 
   assertEquals(None<number>().filter(is_even), None());
@@ -62,16 +58,13 @@ Deno.test("option_filter", () => {
   assertEquals(Some<number>(4).filter(is_even), Some(4));
 });
 
-Deno.test("falsies are not None", () => {
-  for (const falsy of [0, undefined, null, false]) {
-    assertNotEquals(Some(falsy), None());
-  }
-  for (const falsy of [undefined, null, 2 / 0]) {
-    assertEquals(optionFrom(falsy), None());
+testCase("Some( undefined | null | Infinity | NaN ) ->  None", () => {
+  for (const falsy of [undefined, null, 2 / 0, NaN]) {
+    assertEquals(Some(falsy), None());
   }
 });
 
-Deno.test("for o of Option", () => {
+testCase("for o of Option", () => {
   let n = 0;
   for (const opt of None<number>()) {
     n += opt;
@@ -83,7 +76,7 @@ Deno.test("for o of Option", () => {
   assertEquals(n, 15);
 });
 
-Deno.test("option insert", () => {
+testCase("option insert", () => {
   const x = None<{ answer: number }>();
   const y = x.getOrInsert({ answer: 41 });
   y.answer = 42;
@@ -99,7 +92,7 @@ Deno.test("option insert", () => {
   assertEquals(x1, Some(5));
 });
 
-Deno.test("option replace", () => {
+testCase("option replace", () => {
   const x = Some(2);
   const old = x.replace(5);
   assertEquals(x, Some(5));
@@ -111,13 +104,13 @@ Deno.test("option replace", () => {
   assertEquals(oldy, None());
 });
 
-Deno.test("option promises", async () => {
+testCase("option promises", async () => {
   assertEquals(
     await Some(12)
       .andThen(async (n) => await Promise.resolve(Some(n * 2)))
       .andThen((n) => Promise.resolve(Some(n * 3)))
       .andThen((n) => Promise.resolve(Some(n * 4)))
-      .andThen((n) => optionFrom(Promise.resolve(Some(n * 5)))),
+      .andThen((n) => Some(Promise.resolve(Some(n * 5)))),
     Some(12 * 2 * 3 * 4 * 5),
   );
 
@@ -158,7 +151,7 @@ Deno.test("option promises", async () => {
   );
 });
 
-Deno.test("option unwrap", async () => {
+testCase("option unwrap", async () => {
   assertEquals(Some(99).unwrapOr(100), 99);
   assertEquals(None<number>().unwrapOr(100), 100);
   assertEquals(Some("99").unwrapOrElse(() => "100"), "99");
@@ -173,27 +166,13 @@ Deno.test("option unwrap", async () => {
   );
   assertEquals(
     await Some(42)
-      .map(async (n) => await Promise.resolve(n * n / n))
+      .map(async (n) => Promise.resolve(n * n / n))
       .unwrapOr(99),
     42,
   );
 });
 
-Deno.test("option flatten", { ignore: true }, () => {
-  assertEquals(Some(Some(42)).flatten(), Some(42));
-  assertEquals(Some(Some(42)).flatten().flatten(), Some(42));
-  assertEquals(
-    Some(Some(42)).flatten().flatten().flatten().flatten(),
-    Some(42),
-  );
-  assertEquals(None().flatten(), None());
-  assertEquals(Some(Some(Some(88))).flatten(), Some(Some(88)));
-  assertEquals(Some(Some(None())).flatten(), Some(None()));
-  assertEquals(Some(Some(None())).flatten().flatten(), None());
-  assertEquals(Some(Some(None())).flatten().flatten().flatten(), None());
-});
-
-Deno.test("option take", () => {
+testCase("option take", () => {
   const x = Some(42);
   assertEquals(x.take(), Some(42));
   assertEquals(x, None());
@@ -201,10 +180,109 @@ Deno.test("option take", () => {
   assertEquals(x, None());
 });
 
-Deno.test("option combined with result", async () => {
-  const a = await Some("hello").mapResult<ResultPromise<boolean, string>>(
-    () => OkPromise<boolean, string>(false),
-    () => OkPromise<boolean, string>(true),
+function promisify<T>(arg: T): Promise<T> {
+  return Promise.resolve(arg);
+}
+
+testCase("option from", async () => {
+  assertEquals(Some(12), Some(12));
+  Some(12).map((some) => assertEquals(some, 12));
+  assertEquals(Some("forty-two"), Some("forty-two"));
+  assertEquals(Some({ answer: 42 }), Some({ answer: 42 }));
+  assertEquals(Some<{ answer: number }>(), None());
+  await Some(promisify(12)).map((some) => assertEquals(some, 12));
+  await Some(Some(promisify(12))).map((some) => assertEquals(some, 12));
+  await Some(Some(Some(promisify(12)))).map((some) => assertEquals(some, 12));
+  await Some(Some(Some(promisify(1 / 0)))).map((_) =>
+    assert(false, "Should never be executed")
   );
-  assertEquals(a, Ok(true));
+  assertEquals(
+    await Some(1 / 0).mapOrElse(
+      () => 99,
+      (some) => some,
+    ),
+    99,
+  );
+  assertEquals(
+    await Some(promisify(1 / 0)).mapOrElse(
+      () => 42,
+      (some) => some,
+    ),
+    42,
+  );
+  assertEquals(
+    Some(1 / 0).mapOrElse(
+      () => 99,
+      (some) => some,
+    ),
+    99,
+  );
+  assertEquals(
+    Some(1 / 0).mapOrElse(
+      () => Ok<number, number>(99),
+      (some) => Err(some),
+    ),
+    Ok(99),
+  );
+
+  assertEquals(
+    await Some(1 / 0).mapResult(
+      () => OkPromise<number, number>(99),
+      (some) => ErrPromise(some),
+    ),
+    Ok(99),
+  );
+  assertEquals(
+    await Some(promisify(1 / 0)).okOrElse(
+      () => 97,
+    ),
+    Err(97),
+  );
+
+  assertEquals(
+    await Some(promisify(47)).okOrElse(
+      () => 97,
+    ),
+    Ok(47),
+  );
+  Some(promisify("forty-two")).map((some) => assertEquals(some, "forty-two"));
+  assertEquals(Some({ answer: 42 }), Some({ answer: 42 }));
+  assertEquals(Some<{ answer: number }>(), None());
+  const map: { [key: string | number]: { answer: number } } = {
+    abc: { answer: 42 },
+    29: { answer: 29 },
+  };
+  assertEquals(
+    Some("abc")
+      .map((key) => map[key]),
+    Some({ answer: 42 }),
+  );
+  assertEquals(
+    Some<string>()
+      .map((key) => map[key]),
+    None(),
+  );
+  assertEquals(
+    Some("xyz")
+      .map((key) => map[key]),
+    None(),
+  );
+  assertEquals(
+    Some(1 / 0)
+      .map((key) => map[key]),
+    None(),
+  );
+  assertEquals(
+    Some(29)
+      .map((key) => map[key]),
+    Some({ answer: 29 }),
+  );
+});
+
+testCase("result from", () => {
+  assertEquals(Ok(1 / 0), Ok(Infinity));
+  assertEquals(
+    Some(1 / 0).okOrElse(() => "Not a valid number"),
+    Err("Not a valid number"),
+  );
 });

@@ -5,8 +5,8 @@ Option and Result as inspired by https://doc.rust-lang.org/stable/core
 ### Usage (Deno)
 
 ```typescript
-import type { Option, OptionPromise, Result, ResultPromise } from "https://deno.land/x/rusty_core@v2.0.0/mod.ts";
-import { Err, None, Ok, optionFrom, resultFrom, Some } from "https://deno.land/x/rusty_core@v2.0.0/mod.ts";
+import type { Option, OptionPromise, Result, ResultPromise } from "https://deno.land/x/rusty_core@v3.0.0/mod.ts";
+import { Err, None, Ok, optionFrom, resultFrom, Some } from "https://deno.land/x/rusty_core@v3.0.0/mod.ts";
 ```
 
 ## Table of contents
@@ -27,7 +27,35 @@ Also, great inspiration for the implementation came from the
 This implementation supports the in-place modifiers of Option (insert, take), as
 well as combining of Promises to either type.
 
-### A note on Promises and async/await
+### A note on version changes
+ - Version 1 was a pure implementation of the Rust API, and lacked support for combining
+   `Promise<Option | Result>` without awaiting them first.
+
+ - Version 2 was a great improvement and introduced the `mapOption` and `mapResult` methods
+   as mapOrElse counterparts where the callbacks may return `Option/OptionPromise` or
+   `Result/ResultPromise` values. This broke the `mapOrElse` definition ov v1.
+
+ - Version 3, I cleaned up the API types, but most imprtantly got rid of the `optionFrom`
+   and `resultFrom` helper functions. They are now replaced by `Some` and `Ok`, but this also broke
+   the definition of `Some` when the argument is `undefined | null | Infinity | NaN`
+   
+
+### A note on (the lack of) unwrap/expect
+
+Rust has two methods that might panic: `unwrap` and `expect`
+```rust
+let body = document.body.unwrap();
+let title = body.get_attribute("title").expect("should have title attribute!");
+```
+Neither of these are implemented in this Javascript library. Use the combinator methods to 
+handle all possibilities:
+```typescript
+const title = document.body()
+  .map( body => body.getAttribute("title) )
+  .unwrapOr("*** No title given ***");
+```
+
+### A note on Promises and async/await and combinator methods
 
 Both `Option` and `Result` have several combinator methods, like andThen, orElse
 and map. Those methods accept one or more callback functions that can be async.
@@ -35,36 +63,37 @@ and map. Those methods accept one or more callback functions that can be async.
 The examples below demonstrates how Promises and async callbacks can be combined
 with the andThen and mapOrElse.
 
-#### Example
+### Example
 
 ```typescript
+type ToDo = { userId: number; id: number; title: string; completed: boolean };
+
 function doFetch(url: string): ResultPromise<Response, string> {
-  return resultFrom(
+  return Ok(
     fetch(url)
       .then(
         Ok<Response, string>,
-        (err) => Err(err.toString()),
+        (err) => Err<Response, string>(err.toString()),
       ),
   );
 }
 
-function fetchJson(url: string) {
+function fetchJson(url: string): ResultPromise<ToDo, string> {
   return doFetch(url)
     .andThen(async (response) => {
-      if (response.ok) {
-        return Ok(await response.json());
-      } else return Err(`${response.status}: ${await response.text()}`);
+      if (response.ok) return Ok<ToDo, string>(await response.json());
+      else return Err(`${response.status} ${response.statusText}: ${await response.text()}`);
     });
 }
 
 fetchJson("https:///jsonplaceholder.typicode.com/todos/1")
   .mapOrElse(
-    (err) => console.error("Failed", err),
-    (todo) => console.log("Success", todo),
+    (err) => console.error("Failed:", err),
+    (todo) => console.log("Success:", todo.title),
   );
 ```
 
-#### Example with non-Rust helper functions
+### Example with non-Rust helper functions
 ```typescript
 function pauseIfNeeded(ms: Option<number>) {
   return ms.mapOrElse(
@@ -130,10 +159,60 @@ You could consider using `Option` for:
 `Option`s are commonly paired with pattern matching to query the presence of a
 value and take action, always accounting for the `None` case.
 
+### Creation
+`Option` and `OptionPromise` are only interfaces and values of these types can only be created
+through `Some/SomePromise` or `None/NonePromise`.
+
+#### None / NonePromise
+`None` creates an Option that has no associated value. It might be useful to pass a type argument:
+```typescript
+const token = None<string>();
+token.insert(12); // will give a compile error that the argument must be string
+```
+
+#### Some / SomePromise
+`Some` creates an Option which has an associated value. The type argument can be inferred from the argument.
+Actually, `Some` is a bit special, as it also might return a `None` value:
+```typescript
+// All the statements below return a None
+Some()        
+Some( null )  
+Some( Infinity )  
+Some( NaN )
+```
+
+#### OptionPromise
+`SomePromise` and `NonePromise` both create an `OptionPromise`, which has a similar interface as optin.
+Variables with the `OptionPromise` interface are, of course, intended in async/promise methods. In general,
+when a function returns `Promise<Option<T>>`, the actual return value will have the `OptionPromise` interface.
+One can `await` such a value and get the Option<T>. Since `OptionPromise` has the same combinator function names
+as `Option`, these can be concattenated directly
+```typescript
+// @sleep: (s: string) => Promise<nummber>
+
+Some(calculate("555"))
+  .mapOption(
+    () => None<number>(),
+    (n) => Some(n % 2 == 0 ? 2 : 1),
+  ).map(console.log);
+
+Some("555")
+  .mapOption(
+    () => NonePromise<number>(),
+    async (s) => Some(await calculate(s) % 2 == 0 ? 2 : 1),
+  ).map(console.log);
+```
+Both statements will log `2` to the console. The first starts as an `OptionPromise` due to `calculate` being
+a promise. 
+Because `mapOption` requires both callback methods to return the same type, the second statement uses `NonePromise` to
+prevent a compiler error. 
+
+### Example
+
 ```typescript
 function divide(numerator: number, denominator: number): Option<number> {
   if (denominator === 0) {
-    return None;
+    return None();
   } else {
     return Some(numerator / denominator);
   }
@@ -143,12 +222,19 @@ function divide(numerator: number, denominator: number): Option<number> {
 const result = divide(2.0, 3.0);
 
 // Pattern match to retrieve the value
-const message = result.match({
-  some: (res) => `Result: ${res}`,
-  none: "Cannot divide by 0",
-});
+const message = result.mapOrElse(
+  () => "Cannot divide by 0",
+  (some) => `Result: ${some}`,
+);
 
 console.log(message); // "Result: 0.6666666666666666"
+
+// This can al be done using combinators
+console.log(
+  Some(2.0 / 3.0)
+    .map((some) => `Result: ${some}`)
+    .unwrapOr("Cannot divide by 0"),
+);
 ```
 
 Original implementation: <https://doc.rust-lang.org/core/option>
@@ -165,11 +251,6 @@ const y = x.getOrInsert(5);
 assertEquals(y, 5);
 assertEquals(x, Some(5));
 ```
-
-#### A note on `null` and `undefined`
-
-Both `null` and `undefined` are considered a _value_ which can be used with
-`Some()` and are not to be confused with `None()`.
 
 ### `isSome() => boolean`
 
@@ -199,6 +280,11 @@ value and returns the result.
 
 Some languages call this operation `flatmap`.
 
+### `okOrElse<E>(fn: () => E): Result<T, E>`
+
+Transforms the `Option<T>` into a {`Result<T, E>`,mapping `Some<T>(v)` to `Ok<T,E>(v)`} 
+and `None` to `Err(fn())`.
+
 ### `or(optb: Option<T>) => Option<T>`
 
 Returns the option if it contains a value, otherwise returns `optb`.
@@ -226,8 +312,28 @@ Takes the value out of the option, leaving a None in its place.
 ## Result
 
 Type `Result<T,E>` represents an result value: every `Result` is either `Ok` and
-contains a value, or `Ok`, which holds an error value.
+contains a value of type `T`, or `Err`, which holds an error value of type `E`.
+When using `Result` throwing `Errors` is no longer necessary. Just make sure that 
+`Result` values are properly mapped to other values, or other error types.
 
+### Creation
+`Result` and `ResultPromise` are only interfaces and values of these types can only be created
+through `Ok/OkPromise` or `Err/ErrPromise`. Any type can be used for both `Ok` and `Err` and it is even allowed
+to have the same type for both:
+```typescript
+function httpStatus(status: number): Result<number, number> {
+  return status >= 200 && status < 400 ? Ok(status) : Err(status);
+}
+```
+
+#### Ok / OkPromise
+`Ok` creates a `Result` which has an associated value. The type argument can be inferred from the argument.
+
+#### Err / ErrPromise
+`Err` creates a `Result` which has an associated error value. The type argument can be inferred from the argument.
+
+
+### Example
 ```typescript
 class CannotDivideByZero {}
 
@@ -256,7 +362,7 @@ for (const result of [divide(7, 0), divide(2.0, 3.0)]) {
 #### A note on Ok()
 
 When a Result has a void Ok type (`Result<void,unknown>`), Ok must be called as
-`Ok(undefined)`
+`Ok()`
 
 Original implementation: <https://doc.rust-lang.org/core/result>
 
