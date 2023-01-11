@@ -1,4 +1,4 @@
-import { Result, resultFrom, ResultPromise } from "../result/api";
+import { Ok, Result, ResultPromise } from "../result/api";
 import type {
   MapOption,
   OptionMapOption,
@@ -10,7 +10,7 @@ import type {
 } from "../conditional_types";
 import { OptionCombinators } from "./combinators";
 import { NoneValue, SomeValue } from "./implementation";
-import { isOption, Option, optionFrom, OptionPromise, Some } from "./api";
+import { isOption, Option, OptionPromise, Some } from "./api";
 
 export interface UnwrapableOption<T> extends OptionCombinators<T> {
   type: symbol;
@@ -172,7 +172,7 @@ export class PromisedOption<T> implements OptionPromise<T> {
     promise: Promise<Option<T>>,
   ) {
     this.promise = promise.then((resolved) =>
-      isOption<T>(resolved) ? resolved : optionFrom(resolved)
+      isOption<T>(resolved) ? resolved : Some(resolved)
     );
   }
 
@@ -255,7 +255,7 @@ export class PromisedOption<T> implements OptionPromise<T> {
   }
 
   map<U>(fn: (some: T) => U): OptionPromise<U> {
-    return optionFrom(
+    return Some(
       this.promise.then((option) =>
         option.map(fn as (some: T) => U) as OptionPromise<U>
       ),
@@ -266,7 +266,7 @@ export class PromisedOption<T> implements OptionPromise<T> {
     def: () => U,
     fn: (some: T) => U,
   ): OptionPromiseMapOption<U> {
-    return optionFrom(this.promise.then(
+    return Some(this.promise.then(
       (option) => option.mapOption(def, fn) as Promise<Option<U>>,
     )) as OptionPromiseMapOption<U>;
   }
@@ -275,7 +275,7 @@ export class PromisedOption<T> implements OptionPromise<T> {
     def: () => U,
     fn: (some: T) => U,
   ): OptionPromiseMapResult<U> {
-    return resultFrom(this.promise.then(
+    return Ok(this.promise.then(
       (option) =>
         option.mapResult(def, fn) as Promise<Result<unknown, unknown>>,
     )) as OptionPromiseMapResult<U>;
@@ -291,14 +291,14 @@ export class PromisedOption<T> implements OptionPromise<T> {
   }
 
   okOr<E>(err: E): ResultPromise<T, E> {
-    return resultFrom(
+    return Ok(
       this.promise.then((option) => option.okOr(err)),
     );
   }
 
   okOrElse<E>(fn: () => Promise<E>): ResultPromise<T, E>;
   okOrElse<E>(fn: () => E | Promise<E>): ResultPromise<T, E> {
-    return resultFrom(
+    return Ok(
       this.promise.then((option) => option.okOrElse(fn as () => Promise<E>)),
     );
   }

@@ -2,7 +2,14 @@ import assert from "node:assert/strict";
 
 import { None, Option, Some } from "../src/option/api";
 
-import { Err, Ok, type Result, resultFrom } from "../src/result/api";
+import {
+  Err,
+  ErrPromise,
+  Ok,
+  OkPromise,
+  type Result,
+  ResultPromise,
+} from "../src/result/api";
 
 it("result predicates", () => {
   assert(Ok(42).isOk());
@@ -30,10 +37,77 @@ it("result andThen", () => {
   );
 });
 
+it("result ErrPromise", async () => {
+  assert.deepStrictEqual(
+    await ErrPromise("ouch"),
+    Err("ouch"),
+  );
+});
+
+it("result andThen", async () => {
+  const addOneIfEven = (n: number) =>
+    n % 2 == 0
+      ? Ok<string, string>(`${n + 1}`)
+      : Err<string, string>(`${n - 111}`);
+  const addOneIfEvenPromise = (n: number) =>
+    n % 2 == 0
+      ? OkPromise<string, string>(`${n + 1}`)
+      : ErrPromise<string, string>(`${n - 111}`);
+
+  assert.deepStrictEqual(
+    Err<number, string>("no number")
+      .andThen(addOneIfEven),
+    Err("no number"),
+  );
+  assert.deepStrictEqual(
+    Ok<number, string>(887)
+      .andThen(addOneIfEven),
+    Err("776"),
+  );
+  assert.deepStrictEqual(
+    Ok<number, string>(888)
+      .andThen(addOneIfEven),
+    Ok("889"),
+  );
+  assert.deepStrictEqual(
+    await Err<number, string>("no number")
+      .andThen(addOneIfEvenPromise),
+    Err("no number"),
+  );
+  assert.deepStrictEqual(
+    await Ok<number, string>(887)
+      .andThen(addOneIfEvenPromise),
+    Err("776"),
+  );
+  assert.deepStrictEqual(
+    await Ok<number, string>(888)
+      .andThen(addOneIfEvenPromise),
+    Ok("889"),
+  );
+});
+
+it("result orElse", () => {
+  assert.deepStrictEqual(
+    Ok<number, string>(888)
+      .orElse((err) => err.includes("ok") ? Ok(999) : Err(`${err}!`)),
+    Ok(888),
+  );
+  assert.deepStrictEqual(
+    Err<number, string>("ok")
+      .orElse((err) => err.includes("ok") ? Ok(999) : Err(`${err}!`)),
+    Ok(999),
+  );
+  assert.deepStrictEqual(
+    Err<number, string>("nope")
+      .orElse((err) => err.includes("ok") ? Ok(999) : Err(`${err}!`)),
+    Err("nope!"),
+  );
+});
+
 it("result promises", async () => {
   assert.deepStrictEqual(
-    await Ok(12)
-      .andThen(async (n) => await Promise.resolve(Ok(n * 4 - 6)))
+    await Ok<number, string>(12)
+      .andThen(async (n) => await Ok(Promise.resolve(n * 4 - 6)))
       .map((nr) => `${nr}`)
       .map(async (s) => await Promise.resolve(`[${s}]`)),
     Ok("[42]"),
@@ -43,13 +117,13 @@ it("result promises", async () => {
 it("result promise chaining", async () => {
   assert.deepStrictEqual(
     await Ok(12)
-      .andThen(async (n) => await resultFrom(Promise.resolve(Ok(n * 4 - 6))))
+      .andThen(async (n) => await Ok(Promise.resolve(n * 4 - 6)))
       .map((nr) => `${nr}`)
       .map(async (s) => await Promise.resolve(`[${s}]`)),
     Ok("[42]"),
   );
   function modify(n: number) {
-    return resultFrom(Promise.resolve(Ok(n + 1)));
+    return Ok(Promise.resolve(n + 1));
   }
   assert.deepStrictEqual(
     await Ok(12)

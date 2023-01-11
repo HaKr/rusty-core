@@ -8,37 +8,32 @@ import type { Result, ResultPromise } from "../result/api";
 import type { OptionCombinators } from "./combinators";
 import { NoneValue, SomeValue } from "./implementation";
 import { OptionValue, PromisedOption } from "./option";
-import { ResultValue } from "../result/result";
-
-export function Some<T>(value: T): Option<T> {
-  return OptionValue.from(new SomeValue<T>(value));
-}
 
 export function SomePromise<T>(value: T): OptionPromise<T> {
-  return optionFrom(Promise.resolve(Some(value)));
+  return Some(Promise.resolve(value)) as OptionPromise<T>;
 }
 
 export function None<T>(): Option<T> {
-  return OptionValue.from(new NoneValue<T>());
+  return Some() as Option<T>;
 }
 
 export function NonePromise<T>(): OptionPromise<T> {
-  return optionFrom(Promise.resolve(None())) as OptionPromise<T>;
+  return Some(Promise.resolve()) as OptionPromise<T>;
 }
 
-export function optionFrom<T>(
-  from?: T | undefined | null,
+export function Some<T>(
+  value?: T | undefined | null,
 ): OptionFrom<T> {
-  return (from instanceof PromisedOption
-    ? from
-    : from instanceof SomeValue || from instanceof NoneValue
-    ? OptionValue.from(from)
-    : from instanceof Promise
-    ? PromisedOption.from(from)
-    : from === undefined || (typeof from == "object" && from == null) ||
-        (typeof from == "number" && (Number.isNaN(from) || from == Infinity))
-    ? None()
-    : Some(from)) as OptionFrom<T>;
+  return (value instanceof PromisedOption || value instanceof OptionValue
+    ? value
+    : value instanceof SomeValue || value instanceof NoneValue
+    ? OptionValue.from(value)
+    : value instanceof Promise
+    ? PromisedOption.from(value)
+    : value === undefined || (typeof value == "object" && value == null) ||
+        (typeof value == "number" && (Number.isNaN(value) || value == Infinity))
+    ? OptionValue.from(new NoneValue<T>())
+    : OptionValue.from(new SomeValue<T>(value))) as OptionFrom<T>;
 }
 
 export function isOption<T>(opt: unknown): opt is Option<T> {
