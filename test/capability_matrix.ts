@@ -19,18 +19,6 @@ const Some = OptionSome;
 const Ok = ResultOk;
 const Err = ResultErr;
 
-const methodBinding: Map<MethodNames, Binding> = new Map([
-  ["Some", Some as Binding],
-  ["Ok", Ok],
-  ["Err", Err],
-]);
-
-const promiseBinding: Map<MethodNames, Binding> = new Map([
-  ["Some", SomePromise as Binding],
-  ["Ok", OkPromise],
-  ["Err", ErrPromise],
-]);
-
 const methodResultsPerInput: Map<string, MethodResults> = new Map([
   ["NaN", { Some: None(), Ok: Ok(NaN), Err: Err(NaN) }],
   ["undefined", { Some: None(), Ok: Ok(), Err: Err() }],
@@ -68,6 +56,20 @@ const methodResultsPerInput: Map<string, MethodResults> = new Map([
     Err: Err("expected"),
   }],
 ]);
+
+const methodBinding: Map<MethodNames, Binding> = new Map<MethodNames, Binding>([
+  ["Some", Some as Binding],
+  ["Ok", Ok],
+  ["Err", Err],
+]);
+
+const promiseBinding: Map<MethodNames, Binding> = new Map<MethodNames, Binding>(
+  [
+    ["Some", SomePromise as Binding],
+    ["Ok", OkPromise],
+    ["Err", ErrPromise],
+  ],
+);
 
 for (const [input, expectedResults] of methodResultsPerInput) {
   const inputValue = eval(input);

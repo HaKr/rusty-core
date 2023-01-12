@@ -23,6 +23,7 @@ testCase("result andThen", () => {
     Err<number, string>("not a number").andThen(sqThenToString),
     Err<string, string>("not a number"),
   );
+  assertEquals(Ok<number, string>(2).map((n) => `[${n}]`), Ok("[2]"));
 });
 
 testCase("result promises", async () => {

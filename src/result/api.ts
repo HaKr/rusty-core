@@ -67,8 +67,8 @@ export interface Result<T, E> {
    *
    * This function can be used for control flow based on Result values.
    */
-  andThen<U>(op: (some: T) => ResultPromiseLike<U, E>): ResultPromise<U, E>;
-  andThen<U>(op: (some: T) => Result<U, E>): Result<U, E>;
+  andThen<U>(op: (val: T) => ResultPromiseLike<U, E>): ResultPromise<U, E>;
+  andThen<U>(op: (val: T) => Result<U, E>): Result<U, E>;
 
   /**
    * Converts from Result<T, E> to Option<E>.
@@ -86,8 +86,8 @@ export interface Result<T, E> {
    *
    * This function can be used to compose the results of two functions.
    */
-  map<U>(fn: (some: T) => Promise<U>): ResultPromise<U, E>;
-  map<U>(fn: (some: T) => U): Result<U, E>;
+  map<U>(fn: (value: T) => Promise<U>): ResultPromise<U, E>;
+  map<U>(fn: (value: T) => U): Result<U, E>;
 
   /**
    * Maps a Result<T, E> to Result<T, F> by applying a function to a contained Err value, leaving an Ok value untouched.
@@ -105,7 +105,7 @@ export interface Result<T, E> {
    */
   mapResult<U>(
     def: (err: E) => U,
-    fn: (ok: T) => U,
+    fn: (value: T) => U,
   ): ResultMapResult<U>;
 
   /**
@@ -116,7 +116,7 @@ export interface Result<T, E> {
    */
   mapOption<U>(
     def: (err: E) => U,
-    fn: (ok: T) => U,
+    fn: (value: T) => U,
   ): ResultMapOption<U>;
 
   /**
@@ -127,7 +127,7 @@ export interface Result<T, E> {
    */
   mapOrElse<U>(
     def: (err: E) => U,
-    fn: (some: T) => U,
+    fn: (value: T) => U,
   ): ResultMapOrElse<U>;
 
   /**
@@ -181,7 +181,7 @@ export interface ResultPromise<T, E> extends Promise<Result<T, E>> {
    *
    * This function can be used for control flow based on Result values.
    */
-  andThen<U>(op: (some: T) => ResultLike<U, E>): ResultPromise<U, E>;
+  andThen<U>(op: (value: T) => ResultLike<U, E>): ResultPromise<U, E>;
 
   /**
    * Converts from Result<T, E> to Option<E>.
@@ -199,8 +199,8 @@ export interface ResultPromise<T, E> extends Promise<Result<T, E>> {
    *
    * This function can be used to compose the results of two functions.
    */
-  map<U>(fn: (some: T) => Promise<U>): ResultPromise<U, E>;
-  map<U>(fn: (some: T) => U): ResultPromise<U, E>;
+  map<U>(fn: (value: T) => Promise<U>): ResultPromise<U, E>;
+  map<U>(fn: (value: T) => U): ResultPromise<U, E>;
 
   /**
    * Maps a Result<T, E> to Result<T, F> by applying a function to a contained Err value, leaving an Ok value untouched.
@@ -218,7 +218,7 @@ export interface ResultPromise<T, E> extends Promise<Result<T, E>> {
    */
   mapResult<U>(
     def: (err: E) => U,
-    fn: (some: T) => U,
+    fn: (value: T) => U,
   ): ResultPromiseMapResult<U>;
 
   /**
@@ -229,7 +229,7 @@ export interface ResultPromise<T, E> extends Promise<Result<T, E>> {
    */
   mapOption<U>(
     def: (err: E) => U,
-    fn: (some: T) => U,
+    fn: (value: T) => U,
   ): ResultPromiseMapOption<U>;
 
   /**
@@ -240,36 +240,8 @@ export interface ResultPromise<T, E> extends Promise<Result<T, E>> {
    */
   mapOrElse<U>(
     def: (err: E) => U,
-    fn: (some: T) => U,
+    fn: (value: T) => U,
   ): ResultPromiseMapOrElse<U>;
-
-  /**
-   * Maps a {@linkcode Result<T, E>} to {@linkcode Result<U,F>} by applying fallback function default to a contained {@linkcode Err} value,
-   * or function fn to a contained {@linkcode Ok} value.
-   *
-   * This function can be used to chain result promises.
-   *
-   * @see {@linkcode mapResult<U>} for a method that is better
-   *      suited for mapping to another return types than result or option
-   */
-  // resultOrElse<U extends ResultLike<unknown, unknown>>(
-  //   def: (err: E) => U,
-  //   fn: (ok: T) => U,
-  // ): ResultOrElse<U>;
-
-  /**
-   * Maps a {@linkcode Result<T, E>} to {@linkcode Option<U>} by applying fallback function default to a contained {@linkcode Err} value,
-   * or function fn to a contained {@linkcode Ok} value.
-   *
-   * This function can be used to chain result and option promises.
-   *
-   * @see {@linkcode mapResult<U>} for a method that is better
-   *      suited for mapping to another return types than result or option
-   */
-  // optionOrElse<U extends OptionLike<unknown>>(
-  //   def: (err: E) => U,
-  //   fn: (ok: T) => U,
-  // ): OptionOrElse<U>;
 
   /**
    * Converts from {@linkcode Result<T, E>} to {@linkcode Option<T>}.

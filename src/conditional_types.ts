@@ -18,18 +18,18 @@ export type OptionFrom<U> = U extends
   : U extends Option<infer O> ? Option<O>
   : Option<U>;
 
-export type OkFrom<U, E> = U extends
-  Promise<Result<infer T, infer F>> | ResultPromise<infer T, infer F>
+export type OkFrom<U, E> = U extends ResultPromiseLike<infer T, infer F>
   ? ResultPromise<T, F>
   : U extends Promise<infer O> ? ResultPromise<O, E>
   : U extends Result<infer T, infer F> ? Result<T, F>
+  : U extends false | true ? Result<boolean, E>
   : Result<U, E>;
 
-export type ErrFrom<U, E> = E extends
-  Promise<Result<infer T, infer F>> | ResultPromise<infer T, infer F>
+export type ErrFrom<U, E> = E extends ResultPromiseLike<infer T, infer F>
   ? ResultPromise<T, F>
   : E extends Promise<infer O> ? ResultPromise<U, O>
   : E extends Result<infer T, infer F> ? Result<T, F>
+  : E extends false | true ? Result<U, boolean>
   : Result<U, E>;
 
 type OptionPromiseShouldUseMapOption =

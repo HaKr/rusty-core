@@ -37,9 +37,9 @@ export class OkValue<T, E> implements UnwrapableResult<T, E> {
     return res;
   }
 
-  andThen<U>(op: (some: T) => ResultPromiseLike<U, E>): ResultPromise<U, E>;
-  andThen<U>(op: (some: T) => Result<U, E>): Result<U, E>;
-  andThen<U>(op: (some: T) => ResultLike<U, E>): ResultLike<U, E> {
+  andThen<U>(op: (value: T) => ResultPromiseLike<U, E>): ResultPromise<U, E>;
+  andThen<U>(op: (value: T) => Result<U, E>): Result<U, E>;
+  andThen<U>(op: (value: T) => ResultLike<U, E>): ResultLike<U, E> {
     return Ok(op(this.okValue));
   }
 
@@ -58,10 +58,10 @@ export class OkValue<T, E> implements UnwrapableResult<T, E> {
   /**
    * Maps an Result<T,E> to Result<U,E> by applying a function to a contained value.
    */
-  map<U>(fn: (some: T) => Promise<U>): PromisedResult<U, E>;
-  map<U>(fn: (some: T) => U): Result<U, E>;
+  map<U>(fn: (value: T) => Promise<U>): PromisedResult<U, E>;
+  map<U>(fn: (value: T) => U): Result<U, E>;
   map<U>(
-    fn: (some: T) => U | Promise<U>,
+    fn: (value: T) => U | Promise<U>,
   ): Result<U, E> | PromisedResult<U, E> {
     return Ok(fn(this.okValue)) as Result<U, E>;
   }
@@ -83,7 +83,7 @@ export class OkValue<T, E> implements UnwrapableResult<T, E> {
 
   mapOption<U>(
     _: (err: E) => U,
-    fn: (some: T) => U,
+    fn: (value: T) => U,
   ): ResultMapOption<U> {
     const rv = fn(this.okValue);
     return (rv instanceof Promise ? Some(rv) : rv) as ResultMapOption<U>;
@@ -91,7 +91,7 @@ export class OkValue<T, E> implements UnwrapableResult<T, E> {
 
   mapOrElse<U>(
     _: (err: E) => U,
-    fn: (some: T) => U,
+    fn: (value: T) => U,
   ): ResultMapOrElse<U> {
     return fn(this.okValue) as ResultMapOrElse<U>;
   }
@@ -142,9 +142,9 @@ export class ErrValue<T, E> implements UnwrapableResult<T, E> {
     return ResultValue.from(this as unknown as ErrValue<U, E>);
   }
 
-  andThen<U>(fn: (some: T) => ResultPromiseLike<U, E>): PromisedResult<U, E>;
-  andThen<U>(fn: (some: T) => Result<U, E>): Result<U, E>;
-  andThen<U>(_: (some: T) => ResultLike<U, E>): ResultLike<U, E> {
+  andThen<U>(fn: (_: T) => ResultPromiseLike<U, E>): PromisedResult<U, E>;
+  andThen<U>(fn: (_: T) => Result<U, E>): Result<U, E>;
+  andThen<U>(_: (_: T) => ResultLike<U, E>): ResultLike<U, E> {
     return Ok(this) as ResultLike<U, E>;
   }
 
@@ -159,10 +159,10 @@ export class ErrValue<T, E> implements UnwrapableResult<T, E> {
     return true;
   }
 
-  map<U>(fn: (some: T) => Promise<U>): PromisedResult<U, E>;
-  map<U>(fn: (some: T) => U): Result<U, E>;
+  map<U>(fn: (value: T) => Promise<U>): PromisedResult<U, E>;
+  map<U>(fn: (value: T) => U): Result<U, E>;
   map<U>(
-    _: (val: T) => U | Promise<U>,
+    _: (value: T) => U | Promise<U>,
   ): Result<U, E> | PromisedResult<U, E> {
     return ResultValue.from(this as unknown as ErrValue<U, E>);
   }
@@ -185,7 +185,7 @@ export class ErrValue<T, E> implements UnwrapableResult<T, E> {
 
   mapOption<U>(
     def: (err: E) => U,
-    _: (some: T) => U,
+    _: (_: T) => U,
   ): ResultMapOption<U> {
     const rv = def(this.errValue);
     return (rv instanceof Promise ? Some(rv) : rv) as ResultMapOption<U>;
@@ -193,7 +193,7 @@ export class ErrValue<T, E> implements UnwrapableResult<T, E> {
 
   mapOrElse<U>(
     def: (err: E) => U,
-    _: (some: T) => U,
+    _: (_: T) => U,
   ): ResultMapOrElse<U> {
     return def(this.errValue) as ResultMapOrElse<U>;
   }

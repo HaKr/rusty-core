@@ -373,7 +373,7 @@ const tasks: { [key: string]: Task } = {
     action: (ms: Option<number>) =>
       ms.mapOption(
         () => Ok(0),
-        Ok,
+        Ok<number, unknown>,
       ),
     expected: Ok(131),
     expectedMap: 131,
@@ -412,7 +412,6 @@ function check(actual: ExpectedValue, expected: Expectation) {
 
 function taskRunner(
   ms: number,
-  taskName: string,
   task: Task,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -461,6 +460,6 @@ function taskRunner(
 let ix = 101, ms = 101;
 for (const taskName in tasks) {
   testCase(`${ix++}-${taskName}`, async () => {
-    await taskRunner(ms++, taskName, tasks[taskName]);
+    await taskRunner(ms++, tasks[taskName]);
   });
 }
