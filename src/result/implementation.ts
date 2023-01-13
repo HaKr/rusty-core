@@ -1,13 +1,20 @@
 import {
+  Err,
+  None,
+  Ok,
+  Option,
+  PromisedResult,
+  Result,
   ResultLike,
   ResultMapOption,
   ResultMapOrElse,
   ResultMapResult,
+  ResultPromise,
   ResultPromiseLike,
-} from "../conditional_types.ts";
-import { None, type Option, Some } from "../option/mod.ts";
-import { Err, Ok, Result, ResultPromise } from "./api.ts";
-import { PromisedResult, ResultValue, UnwrapableResult } from "./result.ts";
+  ResultValue,
+  Some,
+  UnwrapableResult,
+} from "./mod.ts";
 
 const ResultType = {
   Ok: Symbol(":ok"),
@@ -21,7 +28,7 @@ export class OkValue<T, E> implements UnwrapableResult<T, E> {
     this.okValue = okValue;
   }
 
-  static from<T, E>(ok: T): Result<T, E> {
+  static from<T, E>(ok: T): UnwrapableResult<T, E> {
     return new OkValue(ok);
   }
 
@@ -206,11 +213,11 @@ export class ErrValue<T, E> implements UnwrapableResult<T, E> {
     return optb;
   }
 
-  orElse(fn: (err: E) => Promise<Result<T, E>>): PromisedResult<T, E>;
+  orElse(fn: (err: E) => Promise<Result<T, E>>): ResultPromise<T, E>;
   orElse(fn: (err: E) => Result<T, E>): Result<T, E>;
   orElse(
     fn: (err: E) => Result<T, E> | Promise<Result<T, E>>,
-  ): PromisedResult<T, E> | Result<T, E> {
+  ): ResultPromise<T, E> | Result<T, E> {
     const alt = fn(this.errValue);
     return alt instanceof Promise ? PromisedResult.from(alt) : alt;
   }

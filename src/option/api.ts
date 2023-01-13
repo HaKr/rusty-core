@@ -1,45 +1,72 @@
-import type {
-  OptionFrom,
-  OptionPromiseMapOption,
-  OptionPromiseMapOrElse,
-  OptionPromiseMapResult,
-} from "../conditional_types.ts";
-import type { ResultPromise } from "../result/api.ts";
-import type { OptionCombinators } from "./combinators.ts";
-import { NoneValue, SomeValue } from "./implementation.ts";
-import { OptionValue, PromisedOption } from "./option.ts";
+import {
+  OptionCombinators,
+  ResultLike,
+  ResultLikeShouldUseMapResult,
+  ResultPromise,
+  ResultPromiseLike,
+  ResultPromiseShouldUseMapResult,
+} from "./mod.ts";
 
-export function SomePromise<T>(value: T): OptionPromise<T> {
-  return Some(Promise.resolve(value)) as OptionPromise<T>;
-}
-
-export function None<T>(): Option<T> {
-  return Some() as Option<T>;
-}
-
-export function NonePromise<T>(): OptionPromise<T> {
-  return Some(Promise.resolve()) as OptionPromise<T>;
-}
-
-export function Some<T>(
-  value?: T | undefined | null,
-): OptionFrom<T> {
-  return (value instanceof PromisedOption || value instanceof OptionValue
-    ? value
-    : value instanceof SomeValue || value instanceof NoneValue
-    ? OptionValue.from(value)
-    : value instanceof Promise
-    ? PromisedOption.from(value)
-    : value === undefined || (typeof value == "object" && value == null) ||
-        (typeof value == "number" && (Number.isNaN(value) || value == Infinity))
-    ? OptionValue.from(new NoneValue<T>())
-    : OptionValue.from(new SomeValue<T>(value))) as OptionFrom<T>;
-}
-
-export function isOption<T>(opt: unknown): opt is Option<T> {
-  return opt instanceof OptionValue;
-}
-
+/**
+ * Type `Option<T>` represents an optional value: every Option is either `Some` and contains a value,
+ * or `None`, and does not.
+ * `Option` types are very common, as they have a number of uses:
+ *
+ * 	- Initial values
+ * 	- Return values for functions that are not defined over their entire input range (partial functions)
+ * 	- Return value for otherwise reporting simple errors, where `None` is returned on error
+ * 	- Optional fields
+ * 	- Optional function arguments
+ * 	- Nullable pointers
+ * 	- Swapping things out of difficult situations
+ *
+ * ### A note on (the lack of) unwrap/expect
+ *
+ * Rust has two methods that might panic: `unwrap` and `expect`
+ *
+ * ```rust
+ * let body = document.body.unwrap();
+ * let title = body.get_attribute("title").expect("should have title attribute!");
+ * ```
+ *
+ * Neither of these are implemented in this Javascript library. Use the combinator
+ * methods to handle all possibilities:
+ *
+ * ```typescript
+ * const title = document.body()
+ *   .map( body => body.getAttribute("title) )
+ *   .unwrapOr("*** No title given ***");
+ * ```
+ *
+ * @example
+ * ```typescript
+ * function divide(numerator: number, denominator: number): Option<number> {
+ *   if (denominator === 0) {
+ *     return None();
+ *   } else {
+ *     return Some(numerator / denominator);
+ *   }
+ * }
+ *
+ * // The return value of the function is an option
+ * const result = divide(2.0, 3.0);
+ *
+ * // Pattern match to retrieve the value
+ * const message = result.mapOrElse(
+ *   () => "Cannot divide by 0",
+ *   (some) => `Result: ${some}`,
+ * );
+ *
+ * console.log(message); // "Result: 0.6666666666666666"
+ *
+ * // This can al be done using combinators
+ * console.log(
+ *   Some(2.0 / 3.0)
+ *     .map((some) => `Result: ${some}`)
+ *     .unwrapOr("Cannot divide by 0"),
+ * );
+ * ```
+ */
 export interface Option<T> extends OptionCombinators<T> {
   /**
    * Inserts value into the option if it is None, then returns a mutable reference to the contained value.
@@ -93,6 +120,25 @@ export interface Option<T> extends OptionCombinators<T> {
   take(): Option<T>;
 }
 
+/**
+ * `Option` has several combinator methods, like andThen, orElse
+ * and map. Those methods accept one or more callback functions that can be async.
+ *
+ * The examples below demonstrates how Promises and async callbacks can be combined
+ * with the andThen and mapOrElse.
+ *
+ * @example
+ * ```typescript
+ * function getAnswer() {
+ *   return Promise.resolve(42);
+ * }
+ *
+ * Some(getAnswer())
+ *   .map(async (answer) => await Promise.resolve(`${answer}`))
+ *   .map((answerText) => `answer: ${answerText}`)
+ *   .map(console.log);
+ * ```
+ */
 export interface OptionPromise<T> extends Promise<Option<T>> {
   /**
    * Returns None if the option is None, otherwise returns optb.
@@ -218,3 +264,70 @@ export interface OptionPromise<T> extends Promise<Option<T>> {
    */
   xor(optb: Option<T>): OptionPromise<T>;
 }
+
+export type OptionPromiseShouldUseMapOption =
+  "To return a Promise to an Option, use mapOption";
+export type OptionLikeShouldUseMapOption =
+  "To return (a Promise to) an Option, use mapOption";
+export type NoOptionPromiseShouldUseMapOrElse =
+  "To return a promise to anything other than Option, use mapOrElse";
+
+/**
+ * Value is something that implements an interface with
+ * the `OptionPromise` combinators e.g., `andThen`, `orElse`, `map` and `mapOrElse`
+ * as well as the Promise<Option> interface
+ */
+export type OptionPromiseLike<T> = Promise<Option<T>> | OptionPromise<T>;
+
+/**
+ * Value is something that implements an interface with
+ * the `Option` combinators e.g., `andThen`, `orElse`, `map` and `mapOrElse`
+ */
+export type OptionLike<T> = Option<T> | OptionPromiseLike<T>;
+
+export type MapOption<U> = U extends Promise<Option<infer O>> ? OptionPromise<O>
+  : U extends Promise<infer P> ? OptionPromise<P>
+  : U extends Option<infer O> ? Option<O>
+  : Option<U>;
+export type OptionFrom<U> = U extends
+  Promise<Option<infer O>> | OptionPromise<infer O> ? OptionPromise<O>
+  : U extends Promise<infer O> ? OptionPromise<O>
+  : U extends Option<infer O> ? Option<O>
+  : Option<U>;
+
+export type OptionMapOrElse<T> = T extends OptionPromiseLike<infer U>
+  ? OptionPromiseShouldUseMapOption
+  : T extends ResultPromiseLike<infer U, infer F>
+    ? ResultPromiseShouldUseMapResult
+  : T;
+
+export type OptionPromiseMapOrElse<T> = T extends OptionLike<infer U>
+  ? OptionLikeShouldUseMapOption
+  : T extends ResultLike<infer U, infer F> ? ResultLikeShouldUseMapResult
+  : T extends Promise<infer P> ? Promise<P>
+  : Promise<T>;
+
+export type OptionMapOption<T> = T extends OptionPromiseLike<infer U>
+  ? OptionPromise<U>
+  : T extends ResultPromiseLike<infer U, infer F>
+    ? ResultPromiseShouldUseMapResult
+  : T extends Promise<infer P> ? OptionPromise<P>
+  : T;
+
+export type OptionPromiseMapOption<T> = T extends OptionLike<infer U>
+  ? OptionPromise<U>
+  : T extends ResultLike<infer U, infer F> ? ResultLikeShouldUseMapResult
+  : T extends Promise<infer P> ? OptionPromise<P>
+  : OptionPromise<T>;
+
+export type OptionMapResult<T> = T extends ResultPromiseLike<infer U, infer F>
+  ? ResultPromise<U, F>
+  : T extends OptionPromiseLike<infer U> ? OptionPromiseShouldUseMapOption
+  : T extends Promise<infer P> ? ResultPromise<P, unknown>
+  : T;
+
+export type OptionPromiseMapResult<T> = T extends ResultLike<infer U, infer F>
+  ? ResultPromise<U, F>
+  : T extends OptionLike<infer U> ? OptionLikeShouldUseMapOption
+  : T extends Promise<infer P> ? ResultPromise<P, unknown>
+  : ResultPromise<T, unknown>;

@@ -1,6 +1,14 @@
-import { assert, assertEquals, testCase } from "./deps.ts";
-
-import { Err, ErrPromise, None, Ok, OkPromise, Some } from "../src/index.ts";
+import {
+  assert,
+  assertEquals,
+  Err,
+  ErrPromise,
+  None,
+  Ok,
+  OkPromise,
+  Some,
+  testCase,
+} from "./deps.ts";
 
 testCase("option predicates", () => {
   assert(Some(42).isSome());
@@ -166,7 +174,7 @@ testCase("option unwrap", async () => {
   );
   assertEquals(
     await Some(42)
-      .map(async (n) => Promise.resolve(n * n / n))
+      .map(async (n) => await Promise.resolve(n * n / n))
       .unwrapOr(99),
     42,
   );

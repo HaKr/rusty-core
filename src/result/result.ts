@@ -1,21 +1,119 @@
-import type {
+import {
+  ErrFrom,
+  ErrValue,
   OkFrom,
+  OkValue,
+  Option,
+  OptionPromise,
+  Result,
   ResultLike,
   ResultMapOption,
   ResultMapOrElse,
   ResultMapResult,
+  ResultPromise,
   ResultPromiseLike,
   ResultPromiseMapOption,
   ResultPromiseMapOrElse,
   ResultPromiseMapResult,
-} from "../conditional_types.ts";
-import { Option, OptionPromise, Some } from "../option/api.ts";
-import { Err, Ok, Result, ResultPromise } from "./api.ts";
+  Some,
+  UnwrapableResult,
+} from "./mod.ts";
 
-export interface UnwrapableResult<T, E> extends Result<T, E> {
-  type: symbol;
+/**
+ * Test that a variable implements the {@linkcode Option<T>} interface
+ * @returns true if variable can be cast to `Option<T>`
+ */
+export function isResult<T = unknown, E = unknown>(
+  possibleResult: unknown,
+): possibleResult is Result<T, E> {
+  return possibleResult instanceof ResultValue;
+}
 
-  unwrap(): T;
+export function isResultPromise<T = unknown, E = unknown>(
+  possibleResult: unknown,
+): possibleResult is ResultPromise<T, E> {
+  return possibleResult instanceof PromisedResult;
+}
+
+export function isResultLike<T = unknown, E = unknown>(
+  possibleResult: unknown,
+): possibleResult is ResultLike<T, E> {
+  return isResult(possibleResult) || isResultPromise(possibleResult);
+}
+
+/**
+ * Creates a `Result<T,E>` with an `Ok` value of type T.
+ *
+ * When the value is {@linkcode ResultLike}, the actual return value is that.
+ * When the value is a Promise to T, the return value implements {@linkcode ResultPromise<T,E>}
+ */
+export function Ok<T, E>(ok: T): OkFrom<T, E> {
+  return (
+    isResult<T, E>(ok)
+      ? ok
+      : isResultPromise<T, E>(ok)
+      ? ok
+      : (ok instanceof OkValue) || (ok instanceof ErrValue)
+      ? ResultValue.from<T, E>(ok)
+      : ok instanceof Promise
+      ? PromisedResult.from<T, E>(ok)
+      : ResultValue.from(OkValue.from<T, E>(ok))
+  ) as OkFrom<T, E>;
+}
+
+/**
+ * Create an {@linkcode ResultPromise} from a value.
+ * @example
+ * ```typescript
+ * declare function calculate(n: number): ResultPromise<number,string>;
+ *
+ * Ok(42)
+ *   .mapResult(
+ *     // when using Ok here, the compiler will error on calculate with an Argument Error
+ *     () => OkPromise<number,string>(-1),
+ *     calculate
+ *   );
+ * ```
+ */
+export function OkPromise<T, E>(value: T): ResultPromise<T, E> {
+  return Ok(Promise.resolve(value)) as ResultPromise<T, E>;
+}
+
+/**
+ * Creates a `Result<T,E>` with an `Err` value of type E.
+ *
+ * When the value is {@linkcode ResultLike}, the actual return value is that.
+ * When the value is a Promise to E, the return value implements {@linkcode ResultPromise<T,E>}
+ */
+export function Err<T, E>(err: E): ErrFrom<T, E> {
+  return ((err instanceof ResultValue || err instanceof PromisedResult)
+    ? err
+    : (err instanceof OkValue) || (err instanceof ErrValue)
+    ? ResultValue.from(err)
+    : err instanceof Promise
+    ? PromisedResult.from(err, Err)
+    : ResultValue.from(ErrValue.from(err) as ResultValue<T, E>)) as ErrFrom<
+      T,
+      E
+    >;
+}
+
+/**
+ * Create an {@linkcode ResultPromise} from a value.
+ * @example
+ * ```typescript
+ * declare function calculate(n: number): ResultPromise<number,string>;
+ *
+ * Ok(42)
+ *   .mapResult(
+ *     // when using Err here, the compiler will error on calculate with an Argument Error
+ *     () => ErrPromise<number,string>("could not calculate"),
+ *     calculate
+ *   );
+ * ```
+ */
+export function ErrPromise<T, E>(err: E): ResultPromise<T, E> {
+  return Err(Promise.resolve(err)) as unknown as ResultPromise<T, E>;
 }
 
 export class ResultValue<T, E> implements Result<T, E>, UnwrapableResult<T, E> {
@@ -135,8 +233,12 @@ export class PromisedResult<T, E> implements ResultPromise<T, E> {
     creator: Creator<T, E>,
   ) {
     this.promise = promise.then(
-      creator as unknown as (value: Result<T, E>) => Result<T, E>,
-    );
+      (v) =>
+        isResultLike<T, E>(v)
+          ? v
+          : (creator as unknown as (value: Result<T, E>) => Result<T, E>)(v),
+      (err) => Err<T, E>(err as E),
+    ) as Promise<Result<T, E>>;
   }
 
   get [Symbol.toStringTag](): string {
@@ -146,8 +248,10 @@ export class PromisedResult<T, E> implements ResultPromise<T, E> {
   static from<U, F>(
     promise: Promise<Result<U, F>>,
     then: Creator<U, F> = Ok<U, F>,
-  ): PromisedResult<U, F> {
-    return new PromisedResult(promise, then);
+  ): ResultPromise<U, F> {
+    return isResultPromise<U, F>(promise)
+      ? promise
+      : new PromisedResult(promise, then);
   }
 
   then<TResult1 = Result<T, E>, TResult2 = never>(

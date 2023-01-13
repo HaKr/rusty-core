@@ -1,23 +1,29 @@
-export type { Option, OptionPromise } from "./option/api.ts";
-export { None, NonePromise, Some, SomePromise } from "./option/api.ts";
-
-export type { Result, ResultPromise } from "./result/api.ts";
-export { Err, ErrPromise, Ok, OkPromise } from "./result/api.ts";
 export type {
+  Option,
   OptionLike,
-  OptionMapOption,
-  OptionMapOrElse,
-  OptionMapResult,
+  OptionPromise,
   OptionPromiseLike,
-  OptionPromiseMapOption,
-  OptionPromiseMapOrElse,
-  OptionPromiseMapResult,
+} from "./option/mod.ts";
+export type {
+  Result,
   ResultLike,
-  ResultMapOption,
-  ResultMapOrElse,
-  ResultMapResult,
+  ResultPromise,
   ResultPromiseLike,
-  ResultPromiseMapOption,
-  ResultPromiseMapOrElse,
-  ResultPromiseMapResult,
-} from "./conditional_types.ts";
+} from "./result/mod.ts";
+
+export {
+  isOption,
+  isOptionPromise,
+  None,
+  NonePromise,
+  Some,
+  SomePromise,
+} from "./option/mod.ts";
+export {
+  Err,
+  ErrPromise,
+  isResult,
+  isResultPromise,
+  Ok,
+  OkPromise,
+} from "./result/mod.ts";

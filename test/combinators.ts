@@ -1,22 +1,21 @@
 import {
+  assert,
+  assertEquals,
   Err,
   ErrPromise,
+  isOptionPromise,
+  isResultPromise,
+  NonePromise,
   Ok,
   OkPromise,
-  Result,
-  ResultPromise,
-} from "../src/index.ts";
-
-import {
-  NonePromise,
   type Option,
   OptionPromise,
+  Result,
+  ResultPromise,
   Some,
   SomePromise,
-} from "../src/option/api.ts";
-import { PromisedOption } from "../src/option/option.ts";
-import { PromisedResult } from "../src/result/result.ts";
-import { assert, assertEquals, testCase } from "./deps.ts";
+  testCase,
+} from "./deps.ts";
 
 type ExpectedValue =
   | OptionPromise<unknown>
@@ -45,14 +44,6 @@ type Task = {
 
 function isPromise(p: unknown): p is Promise<unknown> {
   return p instanceof Promise;
-}
-
-function isOptionPromise(p: unknown): p is OptionPromise<unknown> {
-  return p instanceof PromisedOption;
-}
-
-function isResultPromise(p: unknown): p is ResultPromise<unknown, unknown> {
-  return p instanceof PromisedResult;
 }
 
 function promisify<T>(arg: T) {

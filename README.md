@@ -2,11 +2,26 @@
 
 Option and Result as inspired by https://doc.rust-lang.org/stable/core
 
-### Usage (Deno)
+### Usage
 
-```typescript
-import type { Option, OptionPromise, Result, ResultPromise } from "https://deno.land/x/rusty_core@v3.0.0/mod.ts";
-import { Err, None, Ok, optionFrom, resultFrom, Some } from "https://deno.land/x/rusty_core@v3.0.0/mod.ts";
+#### Deno
+
+```
+import { Err, None, Ok, Option, OptionPromise, Result, ResultPromise, Some } 
+from "https://deno.land/x/rusty_core@v3.0.4/mod.ts";
+```
+
+#### Node.js
+
+```json
+"dependencies": {
+	"rusty-core": "3.0.3"
+}
+```
+
+```
+import { Err, None, Ok, Option, OptionPromise, Result, ResultPromise, Some } 
+from "rusty-core";
 ```
 
 ## Table of contents
@@ -28,27 +43,32 @@ This implementation supports the in-place modifiers of Option (insert, take), as
 well as combining of Promises to either type.
 
 ### A note on version changes
- - Version 1 was a pure implementation of the Rust API, and lacked support for combining
-   `Promise<Option | Result>` without awaiting them first.
 
- - Version 2 was a great improvement and introduced the `mapOption` and `mapResult` methods
-   as mapOrElse counterparts where the callbacks may return `Option/OptionPromise` or
-   `Result/ResultPromise` values. This broke the `mapOrElse` definition ov v1.
+- Version 1 was a pure implementation of the Rust API, and lacked support for
+  combining `Promise<Option | Result>` without awaiting them first.
 
- - Version 3, I cleaned up the API types, but most imprtantly got rid of the `optionFrom`
-   and `resultFrom` helper functions. They are now replaced by `Some` and `Ok`, but this also broke
-   the definition of `Some` when the argument is `undefined | null | Infinity | NaN`
-   
+- Version 2 was a great improvement and introduced the `mapOption` and
+  `mapResult` methods as mapOrElse counterparts where the callbacks may return
+  `Option/OptionPromise` or `Result/ResultPromise` values. This broke the
+  `mapOrElse` definition ov v1.
+
+- Version 3, I cleaned up the API types, but most imprtantly got rid of the
+  `optionFrom` and `resultFrom` helper functions. They are now replaced by
+  `Some` and `Ok`, but this also broke the definition of `Some` when the
+  argument is `undefined | null | Infinity | NaN`
 
 ### A note on (the lack of) unwrap/expect
 
 Rust has two methods that might panic: `unwrap` and `expect`
+
 ```rust
 let body = document.body.unwrap();
 let title = body.get_attribute("title").expect("should have title attribute!");
 ```
-Neither of these are implemented in this Javascript library. Use the combinator methods to 
-handle all possibilities:
+
+Neither of these are implemented in this Javascript library. Use the combinator
+methods to handle all possibilities:
+
 ```typescript
 const title = document.body()
   .map( body => body.getAttribute("title) )
@@ -82,7 +102,9 @@ function fetchJson(url: string): ResultPromise<ToDo, string> {
   return doFetch(url)
     .andThen(async (response) => {
       if (response.ok) return Ok<ToDo, string>(await response.json());
-      else return Err(`${response.status} ${response.statusText}: ${await response.text()}`);
+      else {return Err(
+          `${response.status} ${response.statusText}: ${await response.text()}`,
+        );}
     });
 }
 
@@ -94,6 +116,7 @@ fetchJson("https:///jsonplaceholder.typicode.com/todos/1")
 ```
 
 ### Example with non-Rust helper functions
+
 ```typescript
 function pauseIfNeeded(ms: Option<number>) {
   return ms.mapOrElse(
@@ -102,8 +125,11 @@ function pauseIfNeeded(ms: Option<number>) {
   );
 }
 ```
-Due to the second callback being async, the return type for that callback will be `Promise<Option>`
-But mapOrElse requires both callbacks to have the same result type. 
+
+Due to the second callback being async, the return type for that callback will
+be `Promise<Option>` But mapOrElse requires both callbacks to have the same
+result type.
+
 ```log
 error: TS2740 [ERROR]: Type 'Promise<Option<number>>' is missing the following properties from type 'Option<number>': getOrInsert, getOrInsertWith, insert, replace, and 19 more.
     async (ms) => Some(await sleep(ms)),
@@ -115,15 +141,19 @@ error: TS2740 [ERROR]: Type 'Promise<Option<number>>' is missing the following p
             ~~~~~~~~~~~~~~
         at file:///projects/rusty-core/src/option/combinators.ts:76:9
 ```
-So one could surround the `Some(0)`
-with `Promise.resolve`. But then the return type would be `Promise<Option>`. Combining multiple Option 
-and Result together would be cumbersome and error prone, as this requires constructs like
+
+So one could surround the `Some(0)` with `Promise.resolve`. But then the return
+type would be `Promise<Option>`. Combining multiple Option and Result together
+would be cumbersome and error prone, as this requires constructs like
+
 ```typescript
 (await pauseIfNeeded(Some(2))).map( ... );
 ```
 
-To improve the usability, `mapOption` and `mapResult` were added to return an `OptionPromise` or `ResultPromise`, in order to
-allow direct use of the combinators
+To improve the usability, `mapOption` and `mapResult` were added to return an
+`OptionPromise` or `ResultPromise`, in order to allow direct use of the
+combinators
+
 ```typescript
 function pauseIfNeeded(ms: Option<number>) {
   return ms.mapOption(
@@ -132,9 +162,12 @@ function pauseIfNeeded(ms: Option<number>) {
   );
 }
 ```
-At first, it might be confusing when to use `mapOrElse` and when `mapOption` or `mapResult`. Conditional types are
-used to assist a little here. When `mapOrElse` would return something like `Promise<Option>` or `Promise<Result>`, the compiler will complain
-when the combining methods are used:
+
+At first, it might be confusing when to use `mapOrElse` and when `mapOption` or
+`mapResult`. Conditional types are used to assist a little here. When
+`mapOrElse` would return something like `Promise<Option>` or `Promise<Result>`,
+the compiler will complain when the combining methods are used:
+
 ```log
 error: TS2339 [ERROR]: Property 'map' does not exist on type '"To return a Promise to an Option, use mapOption"'.
 pauseIfNeeded(Some(9)).map(None);
@@ -142,51 +175,59 @@ pauseIfNeeded(Some(9)).map(None);
 
 See the combinators test for more examples.
 
-
 ## Option
 
-Type `Option<T>` represents an optional value: every `Option` is either `Some`
-and contains a value, or `None`, and does not.
+Type `Option<T>` represents an optional value: every Option is either `Some` and
+contains a value, or `None`, and does not. `Option` types are very common, as
+they have a number of uses:
 
-You could consider using `Option` for:
-
-- Nullable pointers (`undefined` in JavaScript)
-- Return value for otherwise reporting simple errors, where None is returned on
-  error
-- Default values and/or properties
-- Nested optional object properties
-
-`Option`s are commonly paired with pattern matching to query the presence of a
-value and take action, always accounting for the `None` case.
+    - Initial values
+    - Return values for functions that are not defined over their entire input range (partial functions)
+    - Return value for otherwise reporting simple errors, where `None` is returned on error
+    - Optional fields
+    - Optional function arguments
+    - Nullable pointers
+    - Swapping things out of difficult situations
 
 ### Creation
-`Option` and `OptionPromise` are only interfaces and values of these types can only be created
-through `Some/SomePromise` or `None/NonePromise`.
+
+`Option` and `OptionPromise` are only interfaces and values of these types can
+only be created through `Some/SomePromise` or `None/NonePromise`.
 
 #### None / NonePromise
-`None` creates an Option that has no associated value. It might be useful to pass a type argument:
+
+`None` creates an Option that has no associated value. It might be useful to
+pass a type argument:
+
 ```typescript
 const token = None<string>();
 token.insert(12); // will give a compile error that the argument must be string
 ```
 
 #### Some / SomePromise
-`Some` creates an Option which has an associated value. The type argument can be inferred from the argument.
-Actually, `Some` is a bit special, as it also might return a `None` value:
+
+`Some` creates an Option which has an associated value. The type argument can be
+inferred from the argument. Actually, `Some` is a bit special, as it also might
+return a `None` value:
+
 ```typescript
 // All the statements below return a None
-Some()        
-Some( null )  
-Some( Infinity )  
-Some( NaN )
+Some();
+Some(null);
+Some(Infinity);
+Some(NaN);
 ```
 
 #### OptionPromise
-`SomePromise` and `NonePromise` both create an `OptionPromise`, which has a similar interface as optin.
-Variables with the `OptionPromise` interface are, of course, intended in async/promise methods. In general,
-when a function returns `Promise<Option<T>>`, the actual return value will have the `OptionPromise` interface.
-One can `await` such a value and get the Option<T>. Since `OptionPromise` has the same combinator function names
-as `Option`, these can be concattenated directly
+
+`SomePromise` and `NonePromise` both create an `OptionPromise`, which has a
+similar interface as optin. Variables with the `OptionPromise` interface are, of
+course, intended in async/promise methods. In general, when a function returns
+`Promise<Option<T>>`, the actual return value will have the `OptionPromise`
+interface. One can `await` such a value and get the Option<T>. Since
+`OptionPromise` has the same combinator function names as `Option`, these can be
+concattenated directly
+
 ```typescript
 // @sleep: (s: string) => Promise<nummber>
 
@@ -202,10 +243,11 @@ Some("555")
     async (s) => Some(await calculate(s) % 2 == 0 ? 2 : 1),
   ).map(console.log);
 ```
-Both statements will log `2` to the console. The first starts as an `OptionPromise` due to `calculate` being
-a promise. 
-Because `mapOption` requires both callback methods to return the same type, the second statement uses `NonePromise` to
-prevent a compiler error. 
+
+Both statements will log `2` to the console. The first starts as an
+`OptionPromise` due to `calculate` being a promise. Because `mapOption` requires
+both callback methods to return the same type, the second statement uses
+`NonePromise` to prevent a compiler error.
 
 ### Example
 
@@ -282,8 +324,8 @@ Some languages call this operation `flatmap`.
 
 ### `okOrElse<E>(fn: () => E): Result<T, E>`
 
-Transforms the `Option<T>` into a {`Result<T, E>`,mapping `Some<T>(v)` to `Ok<T,E>(v)`} 
-and `None` to `Err(fn())`.
+Transforms the `Option<T>` into a {`Result<T, E>`,mapping `Some<T>(v)` to
+`Ok<T,E>(v)`} and `None` to `Err(fn())`.
 
 ### `or(optb: Option<T>) => Option<T>`
 
@@ -313,13 +355,15 @@ Takes the value out of the option, leaving a None in its place.
 
 Type `Result<T,E>` represents an result value: every `Result` is either `Ok` and
 contains a value of type `T`, or `Err`, which holds an error value of type `E`.
-When using `Result` throwing `Errors` is no longer necessary. Just make sure that 
-`Result` values are properly mapped to other values, or other error types.
+When using `Result` throwing `Errors` is no longer necessary. Just make sure
+that `Result` values are properly mapped to other values, or other error types.
 
 ### Creation
-`Result` and `ResultPromise` are only interfaces and values of these types can only be created
-through `Ok/OkPromise` or `Err/ErrPromise`. Any type can be used for both `Ok` and `Err` and it is even allowed
-to have the same type for both:
+
+`Result` and `ResultPromise` are only interfaces and values of these types can
+only be created through `Ok/OkPromise` or `Err/ErrPromise`. Any type can be used
+for both `Ok` and `Err` and it is even allowed to have the same type for both:
+
 ```typescript
 function httpStatus(status: number): Result<number, number> {
   return status >= 200 && status < 400 ? Ok(status) : Err(status);
@@ -327,13 +371,17 @@ function httpStatus(status: number): Result<number, number> {
 ```
 
 #### Ok / OkPromise
-`Ok` creates a `Result` which has an associated value. The type argument can be inferred from the argument.
+
+`Ok` creates a `Result` which has an associated value. The type argument can be
+inferred from the argument.
 
 #### Err / ErrPromise
-`Err` creates a `Result` which has an associated error value. The type argument can be inferred from the argument.
 
+`Err` creates a `Result` which has an associated error value. The type argument
+can be inferred from the argument.
 
 ### Example
+
 ```typescript
 class CannotDivideByZero {}
 

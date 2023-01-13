@@ -1,6 +1,15 @@
-import { assert, assertEquals, testCase } from "./deps.ts";
-
-import { Err, None, Ok, Option, type Result, Some } from "../src/index.ts";
+import {
+  assert,
+  assertEquals,
+  Err,
+  None,
+  Ok,
+  Option,
+  OptionPromise,
+  Result,
+  Some,
+  testCase,
+} from "./deps.ts";
 
 testCase("result predicates", () => {
   assert(Ok(42).isOk());
@@ -80,4 +89,41 @@ testCase("for o of Result", () => {
 testCase("result mapErr", () => {
   assertEquals(Err(41).mapErr((err) => `${err + 2}`), Err("43"));
   assertEquals(Ok<number, number>(41).mapErr((err) => `${err + 2}`), Ok(41));
+});
+
+class Failed extends Error {}
+
+testCase("result promise rejects expected", () => {
+  async function compute(n: number) {
+    await Promise.resolve(n);
+    throw new Failed("returned an Err");
+  }
+
+  Ok(compute(42)).mapErr(
+    (err) => {
+      assert(
+        err instanceof Failed,
+        "This is the Err we did expect",
+      );
+      assertEquals(err.message, "returned an Err");
+    },
+  );
+});
+
+declare function calculate(n: number): OptionPromise<number>;
+testCase("result promise rejects unexpected", () => {
+  async function compute(n: number) {
+    return await calculate(n).okOrElse(() =>
+      new Failed("calculate did not return a value")
+    );
+  }
+
+  Ok(compute(42)).mapErr(
+    (err) => {
+      assert(
+        err instanceof ReferenceError,
+        "because this is a coding error, but at least it is an Err",
+      );
+    },
+  );
 });

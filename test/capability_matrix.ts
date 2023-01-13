@@ -1,12 +1,14 @@
-import { assertEquals, testCase } from "./deps.ts";
-
-import { ErrPromise, OkPromise, SomePromise } from "../src/index.ts";
 import {
+  assertEquals,
   Err as ResultErr,
+  ErrPromise,
   None as OptionNone,
   Ok as ResultOk,
+  OkPromise,
   Some as OptionSome,
-} from "../src/index.ts";
+  SomePromise,
+  testCase,
+} from "./deps.ts";
 
 type MethodResult = unknown;
 type Binding = (value: unknown) => unknown;
@@ -21,7 +23,7 @@ const Err = ResultErr;
 
 const methodResultsPerInput: Map<string, MethodResults> = new Map([
   ["NaN", { Some: None(), Ok: Ok(NaN), Err: Err(NaN) }],
-  ["undefined", { Some: None(), Ok: Ok(), Err: Err() }],
+  ["undefined", { Some: None(), Ok: Ok(undefined), Err: Err(undefined) }],
   ["null", { Some: None(), Ok: Ok(null), Err: Err(null) }],
   ["-1", { Some: Some(-1), Ok: Ok(-1), Err: Err(-1) }],
   ["0", { Some: Some(0), Ok: Ok(0), Err: Err(0) }],

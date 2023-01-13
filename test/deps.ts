@@ -1,9 +1,28 @@
-import {
+export {
   assert,
   assertEquals,
   assertNotEquals,
-} from "https://deno.land/std@0.170.0/testing/asserts.ts";
+  testCase,
+} from "./deps.deno.ts";
 
-export { assert, assertEquals, assertNotEquals };
+export type {
+  Option,
+  OptionPromise,
+  Result,
+  ResultPromise,
+} from "../src/index.ts";
 
-export const testCase = Deno.test;
+export {
+  Err,
+  ErrPromise,
+  isOption,
+  isOptionPromise,
+  isResult,
+  isResultPromise,
+  None,
+  NonePromise,
+  Ok,
+  OkPromise,
+  Some,
+  SomePromise,
+} from "../src/index.ts";
