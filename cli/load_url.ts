@@ -1,4 +1,4 @@
-import { Err, Ok, ResultPromise } from "../src/result/api.ts";
+import { Err, Ok, ResultPromise } from "../src/lib.ts";
 
 type ToDo = { userId: number; id: number; title: string; completed: boolean };
 

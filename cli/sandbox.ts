@@ -1,5 +1,4 @@
-import { Err, Ok } from "../src/index.ts";
-import { Some } from "../src/option/api.ts";
+import { Err, Ok, Some } from "../src/lib.ts";
 
 type MFrom<U> = U extends Mapper<infer T> ? Mapper<T>
   : U extends true | false ? Mapper<boolean>

@@ -10,7 +10,7 @@ export type {
   OptionPromise,
   Result,
   ResultPromise,
-} from "../src/index.ts";
+} from "../src/lib.ts";
 
 export {
   Err,
@@ -25,4 +25,4 @@ export {
   OkPromise,
   Some,
   SomePromise,
-} from "../src/index.ts";
+} from "../src/lib.ts";

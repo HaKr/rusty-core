@@ -1,4 +1,4 @@
-import { isOptionPromise, Ok, Some } from "../src/index.ts";
+import { isOptionPromise, Ok, Some } from "../src/lib.ts";
 import { assertEquals } from "../test/deps.ts";
 
 function getAnswer() {
