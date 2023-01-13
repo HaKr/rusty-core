@@ -3,13 +3,13 @@ export type {
   OptionLike,
   OptionPromise,
   OptionPromiseLike,
-} from "./option/mod.ts";
+} from "./option/mod";
 export type {
   Result,
   ResultLike,
   ResultPromise,
   ResultPromiseLike,
-} from "./result/mod.ts";
+} from "./result/mod";
 
 export {
   isOption,
@@ -18,7 +18,7 @@ export {
   NonePromise,
   Some,
   SomePromise,
-} from "./option/mod.ts";
+} from "./option/mod";
 export {
   Err,
   ErrPromise,
@@ -26,7 +26,7 @@ export {
   isResultPromise,
   Ok,
   OkPromise,
-} from "./result/mod.ts";
+} from "./result/mod";
 
 /**
  * Type `Option<T>` represents an optional value: every Option is either `Some` and contains a value,

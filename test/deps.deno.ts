@@ -1,3 +1,4 @@
+/*
 import {
   assert,
   assertEquals,
@@ -7,3 +8,4 @@ import {
 export { assert, assertEquals, assertNotEquals };
 
 export const testCase = Deno.test;
+*/

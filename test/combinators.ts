@@ -381,7 +381,7 @@ function asMapable(v: ExpectedValue, expected: Expectation): Mapable {
     map: (_: (actual: ExpectedValue) => ExpectedValue) => {
       assert(false, `Expected an Option or OptionPromise to ${expected}`);
     },
-  };
+  } as Mapable;
 }
 
 interface Thenable {
@@ -398,12 +398,11 @@ function asThenable(v: ExpectedValue, expected: Expectation): Thenable {
 
 function check(actual: ExpectedValue, expected: Expectation) {
   if (typeof expected == "function") expected(actual);
-  else assert.deepStrictEqual(actual, expected);
+  else assertEquals(actual, expected);
 }
 
 function taskRunner(
   ms: number,
-  taskName: string,
   task: Task,
 ): Promise<void> {
   return new Promise((resolve, reject) => {

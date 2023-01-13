@@ -1,16 +1,6 @@
-export {
-  assert,
-  assertEquals,
-  assertNotEquals,
-  testCase,
-} from "./deps.deno.ts";
+export { assert, assertEquals, assertNotEquals, testCase } from "./deps.npm";
 
-export type {
-  Option,
-  OptionPromise,
-  Result,
-  ResultPromise,
-} from "../src/lib.ts";
+export type { Option, OptionPromise, Result, ResultPromise } from "../src/lib";
 
 export {
   Err,
@@ -25,4 +15,4 @@ export {
   OkPromise,
   Some,
   SomePromise,
-} from "../src/lib.ts";
+} from "../src/lib";

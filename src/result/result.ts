@@ -17,7 +17,7 @@ import {
   ResultPromiseMapResult,
   Some,
   UnwrapableResult,
-} from "./mod.ts";
+} from "./mod";
 
 /**
  * Test that a variable implements the {@linkcode Option<T>} interface
@@ -295,7 +295,9 @@ export class PromisedResult<T, E> implements ResultPromise<T, E> {
   }
 
   err(): OptionPromise<E> {
-    return Some(this.promise.then((result) => result.err()));
+    return Some(
+      this.promise.then((result) => result.err()) as Promise<Option<E>>,
+    );
   }
 
   isOk(): Promise<boolean> {
@@ -342,10 +344,10 @@ export class PromisedResult<T, E> implements ResultPromise<T, E> {
     fn: (value: T) => U,
   ): ResultPromiseMapOption<U> {
     return Some(
-      this.promise.then((result) => result.mapOption(def, fn)) as Promise<
-        Option<unknown>
-      >,
-    ) as ResultPromiseMapOption<U>;
+      this.promise.then(
+        (result) => result.mapOption(def, fn),
+      ) as Promise<Option<U>>,
+    ) as unknown as ResultPromiseMapOption<U>;
   }
 
   mapOrElse<U>(
@@ -358,7 +360,9 @@ export class PromisedResult<T, E> implements ResultPromise<T, E> {
   }
 
   ok(): OptionPromise<T> {
-    return Some(this.promise.then((result) => result.ok()));
+    return Some(
+      this.promise.then((result) => result.ok()) as Promise<Option<T>>,
+    );
   }
 
   or(optb: Result<T, E>): ResultPromise<T, E> {
