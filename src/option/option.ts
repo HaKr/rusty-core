@@ -1,21 +1,137 @@
-import { Ok, Result, ResultPromise } from "../result/api";
-import type {
+import {
   MapOption,
+  NoneValue,
+  Ok,
+  Option,
+  OptionFrom,
+  OptionLike,
   OptionMapOption,
   OptionMapOrElse,
   OptionMapResult,
+  OptionPromise,
   OptionPromiseMapOption,
   OptionPromiseMapOrElse,
   OptionPromiseMapResult,
-} from "../conditional_types";
-import { OptionCombinators } from "./combinators";
-import { NoneValue, SomeValue } from "./implementation";
-import { isOption, Option, OptionPromise, Some } from "./api";
+  Result,
+  ResultPromise,
+  SomeValue,
+  UnwrapableOption,
+} from "./mod";
 
-export interface UnwrapableOption<T> extends OptionCombinators<T> {
-  type: symbol;
+/**
+ * Create an {@linkcode OptionPromise} from a value.
+ * @example
+ * ```typescript
+ * declare function calculate(n: number): OptionPromise<number>;
+ * Some(42)
+ *   .mapOption(
+ *     // when using Some here, the compiler will error on calculate with an Argument Error
+ *     () => SomePromise(-1),
+ *     calculate
+ *   );
+ * ```
+ */
+export function SomePromise<T>(value: T): OptionPromise<T> {
+  return Some(Promise.resolve(value)) as OptionPromise<T>;
+}
 
-  unwrap(): T;
+/**
+ * `None` creates an Option that has no associated value. It might be useful to
+ * pass a type argument:
+ * ```typescript
+ * const token = None<string>();
+ * token.insert(12); // will give a compile error that the argument must be string
+ * ```
+ */
+export function None<T>(): Option<T> {
+  return Some() as Option<T>; // Not a mistake Some(undefined) returns a None
+}
+
+/**
+ * Create an {@linkcode OptionPromise} without a value.
+ * @example
+ * ```typescript
+ * declare function calculate(n: number): OptionPromise<number>;
+ * Some(42)
+ *   .mapOption(
+ *     // when using Some here, the compiler will error on calculate with an Argument Error
+ *     () => NonePromise,
+ *     calculate
+ *   );
+ * ```
+ */
+export function NonePromise<T>(): OptionPromise<T> {
+  return Some(Promise.resolve()) as OptionPromise<T>;
+}
+
+/**
+ * `Some` creates an Option which has an associated value. The type argument can be
+ * inferred from the argument. Actually, `Some` is a bit special, as it also might
+ * return a `None` value:
+ * ```typescript
+ * // All the statements below return a None
+ * Some();
+ * Some(null);
+ * Some(Infinity);
+ * Some(NaN);
+ * ```
+ * Passing a promise to `Some` results in an {@linkcode OptionPromise<T>}, which can be
+ * convenient. When a `OptionPromise` is required e.g., for {@linkcode mapOrElse},
+ * {@linkcode NonePromise} or {@linkcode SomePromise}
+ */
+export function Some<T>(
+  value?: T | undefined | null,
+): OptionFrom<T> {
+  return (value instanceof PromisedOption || value instanceof OptionValue
+    ? value
+    : value instanceof SomeValue || value instanceof NoneValue
+    ? OptionValue.from(value)
+    : value instanceof Promise
+    ? PromisedOption.from(value)
+    : value === undefined || (typeof value == "object" && value == null) ||
+        (typeof value == "number" && (Number.isNaN(value) || value == Infinity))
+    ? OptionValue.from(new NoneValue<T>())
+    : OptionValue.from(new SomeValue<T>(value))) as OptionFrom<T>;
+}
+
+/**
+ * Test that a variable implements the {@linkcode Option<T>} interface
+ * @returns true if variable can be cast to `Option<T>`
+ *
+ * @example
+ * ```typescript
+ * const vut: unknown = Some(42);
+ * if (isOption(vut)) {
+ *   console.log(vut.unwrapOr(-99));
+ * }
+ * ```
+ */
+export function isOption<T = unknown>(
+  possibleOption: unknown,
+): possibleOption is Option<T> {
+  return possibleOption instanceof OptionValue;
+}
+
+/**
+ * Test that a variable implements the {@linkcode OptionPromise<T>} interface
+ * @returns true if variable can be cast to `OptionPromise<T>`
+ *
+ * @example
+ * const vut: unknown = Some(Promise.resolve(42));
+ * if (isOptionPromise<number>(vut)) {
+ *   vut.map(console.log);
+ * }
+ */
+export function isOptionPromise<T = unknown>(
+  possibleOption: unknown,
+): possibleOption is OptionPromise<T> {
+  return possibleOption instanceof PromisedOption;
+}
+
+export function isOptionLike<T = unknown>(
+  possibleOption: unknown,
+): possibleOption is OptionLike<T> {
+  return isOption(possibleOption) || isOptionPromise(possibleOption);
 }
 
 export class OptionValue<T> implements Option<T>, UnwrapableOption<T> {
@@ -171,8 +287,9 @@ export class PromisedOption<T> implements OptionPromise<T> {
   constructor(
     promise: Promise<Option<T>>,
   ) {
-    this.promise = promise.then((resolved) =>
-      isOption<T>(resolved) ? resolved : Some(resolved)
+    this.promise = promise.then(
+      (resolved) => isOptionLike<T>(resolved) ? resolved : Some(resolved),
+      (_reason) => None(),
     );
   }
 

@@ -1,11 +1,13 @@
 import type {
   MapOption,
+  Option,
   OptionMapOption,
   OptionMapOrElse,
   OptionMapResult,
-} from "../conditional_types";
-import type { Result, ResultPromise } from "../result/api";
-import type { Option, OptionPromise } from "./api";
+  OptionPromise,
+  Result,
+  ResultPromise,
+} from "./mod";
 
 export interface OptionCombinators<T> {
   [Symbol.iterator]: () => IterableIterator<T>;

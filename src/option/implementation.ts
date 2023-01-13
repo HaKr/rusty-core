@@ -1,13 +1,20 @@
-import type {
+import {
+  Err,
   MapOption,
+  None,
+  Ok,
+  Option,
+  OptionCombinators,
   OptionMapOption,
   OptionMapOrElse,
   OptionMapResult,
-} from "../conditional_types";
-import { Err, Ok, type Result, type ResultPromise } from "../result/api";
-import { None, Option, type OptionPromise, Some } from "./api";
-import { OptionCombinators, UnwrapableOption } from "./combinators";
-import { OptionValue } from "./option";
+  OptionPromise,
+  OptionValue,
+  Result,
+  ResultPromise,
+  Some,
+  UnwrapableOption,
+} from "./mod";
 
 const OptionType = {
   Some: Symbol(":some"),

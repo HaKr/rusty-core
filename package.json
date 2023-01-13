@@ -1,8 +1,8 @@
 {
   "name": "rusty-core",
-  "version": "3.0.1",
+  "version": "3.0.3",
   "description": "Option and Result as inspired by https://doc.rust-lang.org/stable/core",
-  "main": "lib/index.js",
+  "main": "lib/lib.js",
   "type": "commonjs",
   "directories": {
     "test": "test",

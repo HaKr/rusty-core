@@ -1,5 +1,13 @@
-import { Err, ErrPromise, Ok, OkPromise } from "../src/index";
-import { None, NonePromise, Some, SomePromise } from "../src/option/api";
+import {
+  Err,
+  ErrPromise,
+  None,
+  NonePromise,
+  Ok,
+  OkPromise,
+  Some,
+  SomePromise,
+} from "../src/lib";
 
 Some(12)
   .mapOrElse(

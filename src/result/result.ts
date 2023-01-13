@@ -1,22 +1,119 @@
-import type {
+import {
+  ErrFrom,
+  ErrValue,
   OkFrom,
+  OkValue,
+  Option,
+  OptionPromise,
+  Result,
   ResultLike,
   ResultMapOption,
   ResultMapOrElse,
   ResultMapResult,
+  ResultPromise,
   ResultPromiseLike,
   ResultPromiseMapOption,
   ResultPromiseMapOrElse,
   ResultPromiseMapResult,
-} from "../conditional_types";
-import { Some } from "../option/api";
-import type { Option, OptionPromise } from "../option/api";
-import { Err, isResult, Ok, Result, ResultPromise } from "./api";
+  Some,
+  UnwrapableResult,
+} from "./mod.ts";
 
-export interface UnwrapableResult<T, E> extends Result<T, E> {
-  type: symbol;
+/**
+ * Test that a variable implements the {@linkcode Option<T>} interface
+ * @returns true if variable can be cast to `Option<T>`
+ */
+export function isResult<T = unknown, E = unknown>(
+  possibleResult: unknown,
+): possibleResult is Result<T, E> {
+  return possibleResult instanceof ResultValue;
+}
 
-  unwrap(): T;
+export function isResultPromise<T = unknown, E = unknown>(
+  possibleResult: unknown,
+): possibleResult is ResultPromise<T, E> {
+  return possibleResult instanceof PromisedResult;
+}
+
+export function isResultLike<T = unknown, E = unknown>(
+  possibleResult: unknown,
+): possibleResult is ResultLike<T, E> {
+  return isResult(possibleResult) || isResultPromise(possibleResult);
+}
+
+/**
+ * Creates a `Result<T,E>` with an `Ok` value of type T.
+ *
+ * When the value is {@linkcode ResultLike}, the actual return value is that.
+ * When the value is a Promise to T, the return value implements {@linkcode ResultPromise<T,E>}
+ */
+export function Ok<T, E>(ok: T): OkFrom<T, E> {
+  return (
+    isResult<T, E>(ok)
+      ? ok
+      : isResultPromise<T, E>(ok)
+      ? ok
+      : (ok instanceof OkValue) || (ok instanceof ErrValue)
+      ? ResultValue.from<T, E>(ok)
+      : ok instanceof Promise
+      ? PromisedResult.from<T, E>(ok)
+      : ResultValue.from(OkValue.from<T, E>(ok))
+  ) as OkFrom<T, E>;
+}
+
+/**
+ * Create an {@linkcode ResultPromise} from a value.
+ * @example
+ * ```typescript
+ * declare function calculate(n: number): ResultPromise<number,string>;
+ *
+ * Ok(42)
+ *   .mapResult(
+ *     // when using Ok here, the compiler will error on calculate with an Argument Error
+ *     () => OkPromise<number,string>(-1),
+ *     calculate
+ *   );
+ * ```
+ */
+export function OkPromise<T, E>(value: T): ResultPromise<T, E> {
+  return Ok(Promise.resolve(value)) as ResultPromise<T, E>;
+}
+
+/**
+ * Creates a `Result<T,E>` with an `Err` value of type E.
+ *
+ * When the value is {@linkcode ResultLike}, the actual return value is that.
+ * When the value is a Promise to E, the return value implements {@linkcode ResultPromise<T,E>}
+ */
+export function Err<T, E>(err: E): ErrFrom<T, E> {
+  return ((err instanceof ResultValue || err instanceof PromisedResult)
+    ? err
+    : (err instanceof OkValue) || (err instanceof ErrValue)
+    ? ResultValue.from(err)
+    : err instanceof Promise
+    ? PromisedResult.from(err, Err)
+    : ResultValue.from(ErrValue.from(err) as ResultValue<T, E>)) as ErrFrom<
+      T,
+      E
+    >;
+}
+
+/**
+ * Create an {@linkcode ResultPromise} from a value.
+ * @example
+ * ```typescript
+ * declare function calculate(n: number): ResultPromise<number,string>;
+ *
+ * Ok(42)
+ *   .mapResult(
+ *     // when using Err here, the compiler will error on calculate with an Argument Error
+ *     () => ErrPromise<number,string>("could not calculate"),
+ *     calculate
+ *   );
+ * ```
+ */
+export function ErrPromise<T, E>(err: E): ResultPromise<T, E> {
+  return Err(Promise.resolve(err)) as unknown as ResultPromise<T, E>;
 }
 
 export class ResultValue<T, E> implements Result<T, E>, UnwrapableResult<T, E> {
@@ -39,9 +136,9 @@ export class ResultValue<T, E> implements Result<T, E>, UnwrapableResult<T, E> {
     return this.result.and(res);
   }
 
-  andThen<U>(op: (some: T) => ResultPromiseLike<U, E>): ResultPromise<U, E>;
-  andThen<U>(op: (some: T) => Result<U, E>): Result<U, E>;
-  andThen<U>(fn: (some: T) => ResultLike<U, E>): ResultLike<U, E> {
+  andThen<U>(op: (value: T) => ResultPromiseLike<U, E>): ResultPromise<U, E>;
+  andThen<U>(op: (value: T) => Result<U, E>): Result<U, E>;
+  andThen<U>(fn: (value: T) => ResultLike<U, E>): ResultLike<U, E> {
     return this.result.andThen(fn as (some: T) => Result<U, E>);
   }
 
@@ -56,10 +153,10 @@ export class ResultValue<T, E> implements Result<T, E>, UnwrapableResult<T, E> {
     return this.result.isErr();
   }
 
-  map<U>(fn: (some: T) => Promise<U>): PromisedResult<U, E>;
-  map<U>(fn: (some: T) => U): Result<U, E>;
+  map<U>(fn: (value: T) => Promise<U>): PromisedResult<U, E>;
+  map<U>(fn: (value: T) => U): Result<U, E>;
   map<U>(
-    fn: (some: T) => U | Promise<U>,
+    fn: (value: T) => U | Promise<U>,
   ): PromisedResult<U, E> | Result<U, E> {
     return this.result.map(fn as (some: T) => U);
   }
@@ -74,21 +171,21 @@ export class ResultValue<T, E> implements Result<T, E>, UnwrapableResult<T, E> {
 
   mapResult<U>(
     def: (err: E) => U,
-    fn: (ok: T) => U,
+    fn: (value: T) => U,
   ): ResultMapResult<U> {
     return this.result.mapResult(def, fn);
   }
 
   mapOption<U>(
     def: (err: E) => U,
-    fn: (ok: T) => U,
+    fn: (value: T) => U,
   ): ResultMapOption<U> {
     return this.result.mapOption(def, fn);
   }
 
   mapOrElse<U>(
     def: (err: E) => U,
-    fn: (some: T) => U,
+    fn: (value: T) => U,
   ): ResultMapOrElse<U> {
     return this.result.mapOrElse(def, fn);
   }
@@ -136,8 +233,12 @@ export class PromisedResult<T, E> implements ResultPromise<T, E> {
     creator: Creator<T, E>,
   ) {
     this.promise = promise.then(
-      creator as unknown as (value: Result<T, E>) => Result<T, E>,
-    );
+      (v) =>
+        isResultLike<T, E>(v)
+          ? v
+          : (creator as unknown as (value: Result<T, E>) => Result<T, E>)(v),
+      (err) => Err<T, E>(err as E),
+    ) as Promise<Result<T, E>>;
   }
 
   get [Symbol.toStringTag](): string {
@@ -146,9 +247,11 @@ export class PromisedResult<T, E> implements ResultPromise<T, E> {
 
   static from<U, F>(
     promise: Promise<Result<U, F>>,
-    then: Creator<U, F> = Ok,
-  ): PromisedResult<U, F> {
-    return new PromisedResult(promise, then);
+    then: Creator<U, F> = Ok<U, F>,
+  ): ResultPromise<U, F> {
+    return isResultPromise<U, F>(promise)
+      ? promise
+      : new PromisedResult(promise, then);
   }
 
   then<TResult1 = Result<T, E>, TResult2 = never>(
@@ -183,10 +286,10 @@ export class PromisedResult<T, E> implements ResultPromise<T, E> {
     );
   }
 
-  andThen<U>(fn: (some: T) => ResultLike<U, E>): ResultPromise<U, E> {
+  andThen<U>(fn: (value: T) => ResultLike<U, E>): ResultPromise<U, E> {
     return Ok(
       this.promise.then((result) =>
-        result.andThen(fn as (some: T) => Result<U, E>)
+        result.andThen(fn as (value: T) => Result<U, E>)
       ),
     ) as ResultPromise<U, E>;
   }
@@ -203,11 +306,11 @@ export class PromisedResult<T, E> implements ResultPromise<T, E> {
     return this.promise.then((result) => result.isErr());
   }
 
-  map<U>(fn: (some: T) => Promise<U>): ResultPromise<U, E>;
-  map<U>(fn: (some: T) => U): ResultPromise<U, E>;
+  map<U>(fn: (value: T) => Promise<U>): ResultPromise<U, E>;
+  map<U>(fn: (value: T) => U): ResultPromise<U, E>;
   map<U>(fn: unknown): ResultPromise<U, E> {
     return Ok(
-      this.promise.then((result) => result.map(fn as (some: T) => Promise<U>)),
+      this.promise.then((result) => result.map(fn as (value: T) => Promise<U>)),
     );
   }
 
@@ -225,7 +328,7 @@ export class PromisedResult<T, E> implements ResultPromise<T, E> {
 
   mapResult<U>(
     def: (err: E) => U,
-    fn: (some: T) => U,
+    fn: (value: T) => U,
   ): ResultPromiseMapResult<U> {
     return Ok(
       this.promise.then((result) =>
@@ -236,7 +339,7 @@ export class PromisedResult<T, E> implements ResultPromise<T, E> {
 
   mapOption<U>(
     def: (err: E) => U,
-    fn: (some: T) => U,
+    fn: (value: T) => U,
   ): ResultPromiseMapOption<U> {
     return Some(
       this.promise.then((result) => result.mapOption(def, fn)) as Promise<
@@ -247,7 +350,7 @@ export class PromisedResult<T, E> implements ResultPromise<T, E> {
 
   mapOrElse<U>(
     def: (err: E) => U,
-    fn: (some: T) => U,
+    fn: (value: T) => U,
   ): ResultPromiseMapOrElse<U> {
     return this.promise.then(
       (result) => result.mapOrElse(def, fn) as U,

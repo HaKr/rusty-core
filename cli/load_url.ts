@@ -1,4 +1,4 @@
-import { Err, Ok, ResultPromise } from "../src/index";
+import { Err, Ok, ResultPromise } from "../src/lib";
 
 type ToDo = { userId: number; id: number; title: string; completed: boolean };
 

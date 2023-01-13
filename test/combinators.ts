@@ -1,23 +1,21 @@
-import assert from "node:assert/strict";
-
 import {
+  assert,
+  assertEquals,
   Err,
   ErrPromise,
+  isOptionPromise,
+  isResultPromise,
+  NonePromise,
   Ok,
   OkPromise,
-  Result,
-  ResultPromise,
-} from "../src/index";
-
-import {
-  NonePromise,
   type Option,
   OptionPromise,
+  Result,
+  ResultPromise,
   Some,
   SomePromise,
-} from "../src/option/api";
-import { PromisedOption } from "../src/option/option";
-import { PromisedResult } from "../src/result/result";
+  testCase,
+} from "./deps";
 
 type ExpectedValue =
   | OptionPromise<unknown>
@@ -46,14 +44,6 @@ type Task = {
 
 function isPromise(p: unknown): p is Promise<unknown> {
   return p instanceof Promise;
-}
-
-function isOptionPromise(p: unknown): p is OptionPromise<unknown> {
-  return p instanceof PromisedOption;
-}
-
-function isResultPromise(p: unknown): p is ResultPromise<unknown, unknown> {
-  return p instanceof PromisedResult;
 }
 
 function promisify<T>(arg: T) {
@@ -374,7 +364,7 @@ const tasks: { [key: string]: Task } = {
     action: (ms: Option<number>) =>
       ms.mapOption(
         () => Ok(0),
-        Ok,
+        Ok<number, unknown>,
       ),
     expected: Ok(131),
     expectedMap: 131,
@@ -386,7 +376,7 @@ interface Mapable {
 }
 
 function asMapable(v: ExpectedValue, expected: Expectation): Mapable {
-  const mapable = (v as unknown as Mapable);
+  const mapable = v as unknown as Mapable;
   return (typeof mapable.map == "function") ? mapable : {
     map: (_: (actual: ExpectedValue) => ExpectedValue) => {
       assert(false, `Expected an Option or OptionPromise to ${expected}`);
@@ -399,7 +389,7 @@ interface Thenable {
 }
 
 function asThenable(v: ExpectedValue, expected: Expectation): Thenable {
-  const thenable = (v as unknown as Thenable);
+  const thenable = v as unknown as Thenable;
   return (typeof thenable.then == "function") ? thenable : {
     then: (_: (actual: ExpectedValue) => void) =>
       assert(false, `Expected a promise to ${expected}`),
@@ -437,7 +427,7 @@ function taskRunner(
           if (noMap) resolve();
         });
       } else {
-        assert.strictEqual((rv as Thenable).then, undefined);
+        assertEquals((rv as Thenable).then, undefined);
       }
 
       if (expectedMap !== undefined) {
@@ -450,7 +440,7 @@ function taskRunner(
           resolve();
         });
       } else {
-        assert.strictEqual((rv as Mapable).map, undefined);
+        assertEquals((rv as Mapable).map, undefined);
       }
       if (noThen && noMap) resolve();
     } catch (e) {
@@ -461,7 +451,7 @@ function taskRunner(
 
 let ix = 101, ms = 101;
 for (const taskName in tasks) {
-  it(`${ix++}-${taskName}`, async () => {
-    await taskRunner(ms++, taskName, tasks[taskName]);
+  testCase(`${ix++}-${taskName}`, async () => {
+    await taskRunner(ms++, tasks[taskName]);
   });
 }
