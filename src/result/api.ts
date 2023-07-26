@@ -6,7 +6,7 @@ import {
   OptionPromise,
   OptionPromiseLike,
   OptionPromiseShouldUseMapOption,
-} from "./mod.ts";
+} from "./mod";
 
 /**
  * Type `Result<T,E>` represents an result value: every `Result` is either `Ok` and
