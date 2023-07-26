@@ -8,14 +8,14 @@ Option and Result as inspired by https://doc.rust-lang.org/stable/core
 
 ```
 import { Err, None, Ok, Option, OptionPromise, Result, ResultPromise, Some } 
-from "https://deno.land/x/rusty_core@v3.0.6/src/lib.ts";
+from "https://deno.land/x/rusty_core@v3.0.8/src/lib.ts";
 ```
 
 #### Node.js
 
 ```json
 "dependencies": {
-	"rusty-core": "3.0.3"
+	"rusty-core": "3.0.5"
 }
 ```
 
