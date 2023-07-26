@@ -15,7 +15,7 @@ from "https://deno.land/x/rusty_core@v3.0.6/src/lib.ts";
 
 ```json
 "dependencies": {
-	"rusty-core": "3.0.3"
+	"rusty-core": "3.0.5"
 }
 ```
 
