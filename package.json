@@ -1,6 +1,6 @@
 {
   "name": "rusty-core",
-  "version": "3.0.3",
+  "version": "3.0.8",
   "description": "Option and Result as inspired by https://doc.rust-lang.org/stable/core",
   "main": "lib/lib.js",
   "directories": {
@@ -20,7 +20,7 @@
     "Pointer safety"
   ],
   "author": "Harry de Kroon",
-  "license": "GPL-3.0-or-later",
+  "license": "Expat",
   "bugs": {
     "url": "https://github.com/HaKr/rusty-core/issues"
   },
